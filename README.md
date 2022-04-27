@@ -1,4 +1,4 @@
-# Go httperrors server 
+# Go httperrors Server 
 
 The main page (/) does not actually generate any errors.  
 
