@@ -1,11 +1,35 @@
 # Go httperrors Server 
 
-The main page (/) does not actually generate any errors.  
+This tool was designed for troubleshooting requests when behind a reverse proxy.  It is a personal project that I use as a Technical Support Engineer at Cloudflare. 
 
-It simply returns back to the user the request headers (and connecting host) that it had received. 
+To install: 
 
-It's particularly useful when the webserver is behind a proxy, so that one can inspect them for troubleshooting purposes.
+```
+go install github.com/dsundquist/httperrors
+```
 
-Additionally if you visit /help you will find links to other locations which purposefully generate 5xx (Cloudflare specific) errors.  This also can be particularly useful when troubleshooting locations behind a proxy. 
+To run the basic webserver: 
 
-This tool was primarily designed to troubleshoot locations behind the Cloudflare proxy and [Cloudflared](https://github.com/cloudflare/cloudflared)
+```
+httperror serve
+```
+
+After the server is running you can visit: 
+
+```
+http://localhost
+```
+
+The main page will just return back the request headers that the server had received.  This can be useful for analysis when behind a reverse proxy or a product like [Cloudflared](https://github.com/cloudflare/cloudflared) 
+
+To use generate 5xx errors, for troubleshooting behind cloudflared, visit: 
+
+```
+http://localhost/help
+```
+
+### Todo: 
+
+* Add TLS support
+* Ability to specify a port other than the default
+
