@@ -1,4 +1,4 @@
-module webserver
+module github.com/dsundquist/httperrors
 
 go 1.17
 
