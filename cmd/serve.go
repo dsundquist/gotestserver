@@ -11,6 +11,7 @@ import (
 
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -21,7 +22,9 @@ var serveCmd = &cobra.Command{
 	Long:  `Use this command to start the webserver, at this time it will use port 80`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("serve called")
-		serve()
+		port, _ := cmd.Flags().GetInt("port")
+		fmt.Printf("Starting Server on port: %v\n", port)
+		serve(port)
 	},
 }
 
@@ -29,9 +32,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
-func serve() {
-
-	log.Println("\nStarting Server...\n")
+func serve(port int) {
 
 	http.HandleFunc("/", PrintHeaders) // Default prints request headers
 	http.HandleFunc("/help", Help)
@@ -46,7 +47,9 @@ func serve() {
 	http.HandleFunc("/520", Fivetwenty)
 	http.HandleFunc("/524", Fivetwentyfour)
 
-	log.Fatal(http.ListenAndServe(":80", nil))
+	location := ":" + strconv.Itoa(port)
+
+	log.Fatal(http.ListenAndServe(location, nil))
 }
 
 func PrintHeaders(w http.ResponseWriter, req *http.Request) {

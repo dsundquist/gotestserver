@@ -8,7 +8,7 @@ To install:
 go install github.com/dsundquist/httperrors@latest
 ```
 
-To run the basic webserver (assuming that haven't yet added `~/go/bin` directory to your path, and that you'll be using the default port 80 which will require sudo): 
+To run the basic webserver (assuming that haven't you yet added `~/go/bin` directory to your path, and that you'll be using the default port 80 which will require sudo): 
 
 ```
 sudo ~/go/bin/httperrors serve
