@@ -17,14 +17,14 @@ sudo ~/go/bin/httperrors serve
 If you wish to not use the default port of 80, you can start the http server on alternate port using the -p flag.
 
 ```
-sudo ~/go/bin/httperrors serve -p 81
+~/go/bin/httperrors serve -p 8080
 ```
 
 
 After the server is running you can visit: 
 
 ```
-http://localhost
+http://localhost:8080
 ```
 
 The main page will just return back the request headers that the server had received.  This can be useful for analysis when behind a reverse proxy or a product like [Cloudflared](https://github.com/cloudflare/cloudflared) 
