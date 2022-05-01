@@ -14,6 +14,13 @@ To run the basic webserver (assuming that haven't you yet added `~/go/bin` direc
 sudo ~/go/bin/httperrors serve
 ```
 
+If you wish to not use the default port of 80, you can start the http server on alternate port using the -p flag.
+
+```
+sudo ~/go/bin/httperrors serve -p 81
+```
+
+
 After the server is running you can visit: 
 
 ```
@@ -31,5 +38,4 @@ http://localhost/help
 ### Todo: 
 
 * Add TLS support
-* Ability to specify a port other than the default
 
