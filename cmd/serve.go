@@ -40,6 +40,7 @@ func serve(port int) {
 	http.HandleFunc("/setcookie", Setcookies)
 	http.HandleFunc("/403", Fourohthree)
 	http.HandleFunc("/404", Fourohfour)
+	http.HandleFunc("/405", Fourohfive)
 	http.HandleFunc("/500", Fivehundred)
 	http.HandleFunc("/502", Fiveohtwo)
 	http.HandleFunc("/503", Fiveohthree)
@@ -156,6 +157,12 @@ func Fourohthree(w http.ResponseWriter, req *http.Request) {
 func Fourohfour(w http.ResponseWriter, req *http.Request) {
 	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
 	w.WriteHeader(404)
+}
+
+// 405
+func Fourohfive(w http.ResponseWriter, req *http.Request) {
+	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	w.WriteHeader(405)
 }
 
 // 500
