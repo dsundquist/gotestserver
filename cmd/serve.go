@@ -125,8 +125,14 @@ func Cors(w http.ResponseWriter, req *http.Request) {
 
 }
 
+// Set Cookie
+// I original had attempted to play with the CF_Authorization Cookie, to see if I could rescope it to the apex domain.
+// That had no impact, and it is now commented out (Might get back to this experiment). 
+// What now exists is a simple ability to set a cookie. 
+// This can be used to test set-cookie behind a proxy.
 func Setcookies(w http.ResponseWriter, req *http.Request) {
 
+/*
 	w.Header().Add("Access-Control-Allow-Credentials", "true")
 	w.Header().Add("cache-control", "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0")
 
@@ -144,6 +150,15 @@ func Setcookies(w http.ResponseWriter, req *http.Request) {
 	myCookie.MaxAge = 600
 	log.Println(myCookie)
 	http.SetCookie(w, myCookie)
+*/
+
+  //Set the expiration date one year in the future, create a cooke and set it.  
+  expiration := time.Now().Add(365 * 24 * time.Hour)
+  cookie := http.Cookie{Name: "my_custom_cookie",Value:"abcd",Expires:expiration}
+  http.SetCookie(w, &cookie)
+
+  //Redirect
+  http.Redirect(w, req, "https://gots-access.sundquist.net", 302)
 
 }
 
