@@ -6,14 +6,14 @@ package cmd
 
 import (
 	"fmt"
-
-	"github.com/spf13/cobra"
-
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/spf13/cobra"
 )
+
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
@@ -86,6 +86,7 @@ func Help(w http.ResponseWriter, req *http.Request) {
 	response += "<h2>Available Locations: </h2>\n"
 	response += "\t <a href =\"/403\">/403</a><br>\n"
 	response += "\t <a href =\"/404\">/404</a><br>\n"
+    response += "\t <a href =\"/405\">/405</a><br>\n" 
 	response += "\t <a href =\"/500\">/500</a><br>\n"
 	response += "\t <a href =\"/502\">/502</a><br>\n"
 	response += "\t <a href =\"/503\">/503</a><br>\n"
@@ -107,10 +108,14 @@ func Help(w http.ResponseWriter, req *http.Request) {
     response += "Other: <br>\n"
 	response += "\t <a href =\"https://522.sundquist.net/\">522 - No tunnel</a><br>\n"
 	response += "\t <a href =\"https://522-tunnel.sundquist.net/\">522 - With tunnel</a><br>\n"
+    response += "\t <a href =\"/setcookie\">Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
 
 	fmt.Fprintf(w, "%v\n", response)
 }
 
+
+// An experiment playing with an issue in Cloudflare Access where an application behind Access is attempting to call
+// a second application which is also behind Access.  This is currently not supported.  We call this Single Page Apps. 
 func Cors(w http.ResponseWriter, req *http.Request) {
 
 	var response string
@@ -163,13 +168,34 @@ func Setcookies(w http.ResponseWriter, req *http.Request) {
 	http.SetCookie(w, myCookie)
 */
 
-  //Set the expiration date one year in the future, create a cooke and set it.  
+  // Set the expiration date one year in the future, create a cooke and set it.  
+  // https://go.dev/src/net/http/cookie.go 
   expiration := time.Now().Add(365 * 24 * time.Hour)
-  cookie := http.Cookie{Name: "my_custom_cookie",Value:"abcd",Expires:expiration}
+  cookie := http.Cookie{} //{Name: "my_custom_cookie",Value:"abcd",Expires:expiration}
+  cookie.Name = "my_custom_cookie" 
+  cookie.Value = "abcd"
+  cookie.Expires = expiration
   http.SetCookie(w, &cookie)
 
-  //Redirect
-  http.Redirect(w, req, "https://gots-access.sundquist.net", 302)
+  // Redirect w/ cookie, uncomment the next line if you want to redirect, but you'll need to remove the response
+  // Or the Redirect will not happen 
+  //http.Redirect(w, req, "https://gots-access.sundquist.net", 302)
+
+  // Serving response, comment this out if you're using redirection above
+  var response string
+  response += "Setting Cookie:\n"
+  response += "\tcookie.Name: %v\n"
+  response += "\tcookie.Value: %v\n"
+  response += "\tcookie.Path: %v\n"
+  response += "\tcookie.Domain: %v\n"
+  response += "\tcookie.Expires: %v\n"
+  response += "\tcookie.MaxAge: %v\n"
+  response += "\tcookie.Secure: %v\n"
+  response += "\tcookie.HttpOnly: %v\n"
+  response += "\tcookie.SameSite: %v\n"
+  
+  fmt.Fprintf(w, response, cookie.Name, cookie.Value, cookie.Path, cookie.Domain, cookie.Expires, cookie.MaxAge, cookie.Secure, cookie.HttpOnly, cookie.SameSite)
+
 
 }
 
@@ -215,7 +241,7 @@ func Fiveohfour(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(504)
 }
 
-// Cloudflare Defines, no response headers as a 520:
+// 520; Cloudflare Defines invalid response codes as a 520:
 func Fivetwenty(w http.ResponseWriter, req *http.Request) {
 	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
 	w.WriteHeader(69)
