@@ -1,6 +1,6 @@
 # Go httperrors Server 
 
-This tool was designed for troubleshooting requests when behind a reverse proxy, primarily Cloudflare.  It is a personal project that I use as a Technical Support Engineer.
+This tool was designed for troubleshooting requests when behind a reverse proxy, primarily Cloudflare.  It is a personal project that I use as a Technical Support Engineer. It is also can be placed behind and useful for troubleshooting [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/) and [cloudflared Tunnels](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/). 
 
 To install: 
 
@@ -34,6 +34,28 @@ To use generate 5xx errors, for troubleshooting behind Cloudflare, visit:
 ```
 http://localhost/help
 ```
+
+## Quick Word About the 522 Error Page
+
+A 522 error is defined here: [Cloudflare Support - 522 Error](https://support.cloudflare.com/hc/en-us/articles/115003011431-Troubleshooting-Cloudflare-5XX-errors#522error). 
+
+The error occurs at the network level when: 
+
+1. Before a connection is established, the origin web server does not return a SYN+ACK to Cloudflare within 15 seconds of Cloudflare sending a SYN.
+2. After a connection is established, the origin web server doesn’t acknowledge (ACK) Cloudflare’s resource request within 90 seconds.
+
+Therefore we cannot complete this from the same server, as we need to sabatoge the server at the network level.  In my implementation I have another simple http server listening on port 80, in which I'm redirect requests over to.  At that server I've added an iptables drop rule that is dropping all ack packets to the listening port, recreated #2 above. 
+
+```
+dsundquist:~$ sudo iptables -S
+-P INPUT ACCEPT
+-P FORWARD ACCEPT
+-P OUTPUT ACCEPT
+-A INPUT -i eth1 -p tcp -m tcp --dport 80 -j DROP
+-A INPUT -i eth0 -p tcp -m tcp --dport 80 -j DROP
+```
+
+For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two routes to reach it, one via its normal IP address (behind Cloudflare) and one over a [cloudflared tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/)
 
 ### Todo : 
 

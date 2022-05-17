@@ -93,7 +93,18 @@ func Help(w http.ResponseWriter, req *http.Request) {
 	response += "\t <a href =\"/520\">/520</a><br>\n"
 	response += "\t <a href =\"/524\">/524</a><br>\n"
 
-	response += "Other: <br>\n"
+    // 522 is an error that occurs at the networking level
+    // It is outlined here: 
+    // https://support.cloudflare.com/hc/en-us/articles/115003011431-Troubleshooting-Cloudflare-5XX-errors#522error
+	// So we'll be redirecting over to another server that is has an iptables rule set to drop ack packets to port 80,
+    // where we have a basic http server listening on that port. 
+    // ~$ sudo iptables -S
+    // -P INPUT ACCEPT
+    // -P FORWARD ACCEPT
+    // -P OUTPUT ACCEPT
+    // -A INPUT -i eth1 -p tcp -m tcp --dport 80 -j DROP
+    // -A INPUT -i eth0 -p tcp -m tcp --dport 80 -j DROP
+    response += "Other: <br>\n"
 	response += "\t <a href =\"https://522.sundquist.net/\">522 - No tunnel</a><br>\n"
 	response += "\t <a href =\"https://522-tunnel.sundquist.net/\">522 - With tunnel</a><br>\n"
 
