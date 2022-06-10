@@ -5,8 +5,11 @@ Copyright © 2022 Dean Sundquist dean@sundquist.net
 package cmd
 
 import (
+	tls2 "crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -24,6 +27,7 @@ var serveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		port, _ := cmd.Flags().GetInt("port")
 		tls, _ := cmd.Flags().GetBool("tls")
+		mtls, _ := cmd.Flags().GetBool("mtls")
 
 		if tls {
 			if port == 80 {
@@ -34,7 +38,7 @@ var serveCmd = &cobra.Command{
 		} else {
 			fmt.Printf("Starting HTTP Server on port: %v\n", port)
 		}
-		serve(port, tls)
+		serve(port, tls, mtls)
 	},
 }
 
@@ -42,7 +46,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
-func serve(port int, tls bool) {
+func serve(port int, tls bool, mtls bool) {
 	var err error
 
 	http.HandleFunc("/", PrintHeaders) // Default prints request headers
@@ -61,7 +65,48 @@ func serve(port int, tls bool) {
 
 	location := ":" + strconv.Itoa(port)
 
-	if tls {
+	if mtls {
+
+		// TODO:
+		//
+		//  Ongoing work here, credit to: https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go
+		//
+		//  1. Why did I need to rename the crypto/tls package, wtf else is using tls
+		//  2. Need better erroring here, like you need server.crt, server.key AND client.crt
+		//  3. fmt.Printf("Starting mTLS Server, port: %v, tls: %v, mtls: %v\n", port, tls, mtls)
+		//
+
+		fmt.Print("Starting mTLS Server, will need ./server.crt, ./server.key, and ./client.crt...\n")
+		// Create a CA certificate pool and add cert.pem to it
+		caCert, err := ioutil.ReadFile("client.crt")
+		if err != nil {
+			log.Fatal(err)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		// Create the TLS Config with the CA pool and enable Client certificate validation
+		tlsConfig := &tls2.Config{
+			ClientCAs:  caCertPool,
+			ClientAuth: tls2.RequireAndVerifyClientCert,
+		}
+
+		// TODO:
+		// What is this command, why is it deprecated, and why don't I need this for this to work?
+		// tlsConfig.BuildNameToCertificate()
+
+		server := &http.Server{
+			Addr:      location,
+			TLSConfig: tlsConfig,
+		}
+
+		err = server.ListenAndServeTLS("./server.crt", "./server.key")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	} else if tls {
 		err = http.ListenAndServeTLS(location, "./server.crt", "./server.key", nil)
 	} else {
 		err = http.ListenAndServe(location, nil)
