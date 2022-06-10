@@ -45,5 +45,6 @@ func init() {
 	// when this action is called directly.
 	serveCmd.Flags().IntP("port", "p", 80, "Specify which port for the webserver to run on.")
 	serveCmd.Flags().BoolP("tls", "s", false, "Run a HTTPS server.")
+	clientCmd.Flags().BoolP("insecure", "k", false, "Ingore Self Signed or bad certificates.")
 	clientCmd.Flags().StringP("location", "l", "http://localhost:80", "The address or IP address that we're connecting to.")
 }

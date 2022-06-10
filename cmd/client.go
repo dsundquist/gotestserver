@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,7 +16,8 @@ var clientCmd = &cobra.Command{
 	Long:  `Used to create to the Server instance`,
 	Run: func(cmd *cobra.Command, args []string) {
 		location, _ := cmd.Flags().GetString("location")
-		client(location)
+		insecure, _ := cmd.Flags().GetBool("insecure")
+		client(location, insecure)
 	},
 }
 
@@ -23,7 +25,16 @@ func init() {
 	rootCmd.AddCommand(clientCmd)
 }
 
-func client(location string) {
+func client(location string, insecure bool) {
+
+	//Ignore bad / self signed certificates.
+	if insecure {
+		fmt.Println("Ignoring selfsigned / bad certificates")
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+
+	// For MTLS we're going to need to move away form this http.get to client.get
+	// I'm following this at this time: https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go
 
 	r, err := http.Get(location)
 	if err != nil {
