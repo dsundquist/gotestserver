@@ -69,10 +69,19 @@ func serve(port int, tls bool) {
 
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			//https://medium.com/rungo/secure-https-servers-in-go-a783008b36da
 			log.Print("Please Generate a key pair and x509 certificate:")
 			log.Print("\topenssl req  -new  -newkey rsa:2048  -nodes  -keyout server.key  -out server.csr")
 			log.Print("\topenssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server.crt")
-			log.Print("\thttps://medium.com/rungo/secure-https-servers-in-go-a783008b36da")
+
+			// Or (from https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go)
+			//openssl req -newkey rsa:2048 \
+			//-new -nodes -x509 \
+			//-days 3650 \
+			//-out cert.pem \
+			//-keyout key.pem \
+			//-subj "/C=US/ST=California/L=Mountain View/O=Your Organization/OU=Your Unit/CN=localhost"
+
 		}
 		log.Fatal(err)
 	}
