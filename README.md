@@ -1,12 +1,14 @@
-# Go httperrors Server 
+# Go httperrors 
 
 This tool was designed for troubleshooting requests when behind a reverse proxy, primarily Cloudflare.  It is a personal project that I use as a Technical Support Engineer. It can also be placed behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/) and [cloudflared Tunnels](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/) for troubleshooting. 
 
-To install:   
+## Install 
 
 ```
 go install github.com/dsundquist/httperrors@latest
 ```
+
+## Usage 
 
 To run the basic webserver (assuming that you haven't yet added `~/go/bin` directory to your path, and that you'll be using the default port 80 which will require sudo): 
 
@@ -20,12 +22,36 @@ If you wish to not use the default port of 80, you can start the http server on 
 ~/go/bin/httperrors serve -p 8080
 ```
 
-
-After the server is running you can visit: 
+If you want to run an https server you'll need a self signed certificate.  You can run the following 2x commands: 
 
 ```
-curl -sv http://localhost:8080
+openssl req  -new  -newkey rsa:2048  -nodes  -keyout server.key  -out server.csr
+openssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server.crt
 ```
+
+The 2x files `server.crt` and `server.key` should be in the same directory has `./httperrors`: 
+
+```
+* local_directory: 
+   |-> httperrors
+   |
+   |-> server.crt 
+   |-> server.key 
+```
+
+Then one can run the serve command with a -s flag: 
+
+```
+sudo ~/go/bin/httperrors serve -s
+```
+
+The CLI is built from [Cobra](https://github.com/spf13/cobra), to see additional usage use the --help flag: 
+
+```
+./httperrors serve --help
+```
+
+## HTTP Server Behavior 
 
 The main page will just return back the request headers that the server had received.  This can be useful for analysis when behind a reverse proxy or a product like [Cloudflared](https://github.com/cloudflare/cloudflared) 
 
@@ -57,8 +83,6 @@ dsundquist:~$ sudo iptables -S
 
 For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two routes to reach it, one via its normal IP address (behind Cloudflare) and one over a [cloudflared tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/)
 
-### Todo : 
+## Todo
 
-* Add TLS support
-
-
+* Implement mTLS server 
