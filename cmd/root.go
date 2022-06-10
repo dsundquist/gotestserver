@@ -43,6 +43,6 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	serveCmd.Flags().IntP("port", "p", 80, "Specify which port for the webserver to run on")
+	serveCmd.Flags().BoolP("tls", "s", false, "Run a HTTPS server.")
 }
