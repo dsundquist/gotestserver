@@ -49,7 +49,8 @@ func init() {
 func serve(port int, tls bool, mtls bool) {
 	var err error
 
-	http.HandleFunc("/", PrintHeaders) // Default prints request headers
+	http.HandleFunc("/", PrintHeaders) // Default prints request headersi
+    http.HandleFunc("/cache", Cache)
 	http.HandleFunc("/help", Help)
 	http.HandleFunc("/cors", Cors)
 	http.HandleFunc("/setcookie", Setcookies)
@@ -188,9 +189,24 @@ func Help(w http.ResponseWriter, req *http.Request) {
 	response += "Other: <br>\n"
 	response += "\t <a href =\"https://522.sundquist.net/\">522 - No tunnel</a><br>\n"
 	response += "\t <a href =\"https://522-tunnel.sundquist.net/\">522 - With tunnel</a><br>\n"
-	response += "\t <a href =\"/setcookie\">Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
+	response += "\t <a href =\"/Cache\">Returns a page with a cache header set</a><br>\n"
+    response += "\t <a href =\"/setcookie\">Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
 
 	fmt.Fprintf(w, "%v\n", response)
+}
+
+
+func Cache(w http.ResponseWriter, req *http.Request){
+
+	var response string
+
+	w.Header().Add("Cache-Control", "max-age=300")
+
+	response += "Set cache value!\n"
+
+	fmt.Fprintf(w, "%v\n", response)
+
+
 }
 
 // An experiment playing with an issue in Cloudflare Access where an application behind Access is attempting to call
