@@ -93,3 +93,4 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 * Added a /Cache, to test other headers, clean this up
 * Make something like localhost/response?header1=value1&header2=value2 to specify response headers for testing random headers? 
 * Document all of the above in this README / --help
+* We should rename this from httperrors, to something better.  
