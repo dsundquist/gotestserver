@@ -126,9 +126,18 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	}
 }
 
+func Printlog(req *http.Request) {
+
+	if req.Header.Get("CF-Connecting-IP") != "" {
+		log.Println("Connection from: " + req.Header.Get("CF-Connecting-IP") + " via " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	} else {
+		log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	}
+}
+
 func PrintHeaders(w http.ResponseWriter, req *http.Request) {
 
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 
 	var response string
 
@@ -148,7 +157,7 @@ func PrintHeaders(w http.ResponseWriter, req *http.Request) {
 
 func Cookie(w http.ResponseWriter, req *http.Request) {
 
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 
 	/*
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
@@ -201,7 +210,7 @@ func Cookie(w http.ResponseWriter, req *http.Request) {
 
 func Cors(w http.ResponseWriter, req *http.Request) {
 
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 
 	var response string
 
@@ -227,7 +236,7 @@ func Cors(w http.ResponseWriter, req *http.Request) {
 
 func Help(w http.ResponseWriter, req *http.Request) {
 
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 
 	var response string
 
@@ -269,7 +278,7 @@ func Help(w http.ResponseWriter, req *http.Request) {
 
 func Readme(w http.ResponseWriter, req *http.Request) {
 
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 
 	response, err := ioutil.ReadFile("./README.html")
 	if err != nil {
@@ -281,7 +290,7 @@ func Readme(w http.ResponseWriter, req *http.Request) {
 
 func Response(w http.ResponseWriter, req *http.Request) {
 
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 
 	response := "Setting the following response headers: \n"
 
@@ -299,7 +308,7 @@ func Response(w http.ResponseWriter, req *http.Request) {
 
 func Servefiles(w http.ResponseWriter, req *http.Request) {
 
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 
 	_, err := os.Stat("./public")
 
@@ -317,49 +326,49 @@ func Servefiles(w http.ResponseWriter, req *http.Request) {
 
 // 403; Forbidden
 func Fourohthree(w http.ResponseWriter, req *http.Request) {
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 	w.WriteHeader(403)
 }
 
 // 404; File Not Found
 func Fourohfour(w http.ResponseWriter, req *http.Request) {
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 	w.WriteHeader(404)
 }
 
 // 405; Server recognized request, but has rejected it
 func Fourohfive(w http.ResponseWriter, req *http.Request) {
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 	w.WriteHeader(405)
 }
 
 // 500; Internal Server Error
 func Fivehundred(w http.ResponseWriter, req *http.Request) {
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 	w.WriteHeader(500)
 }
 
 // 502;  Bad Gateway
 func Fiveohtwo(w http.ResponseWriter, req *http.Request) {
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 	w.WriteHeader(502)
 }
 
 // 503; Service Temporarily Unavailable
 func Fiveohthree(w http.ResponseWriter, req *http.Request) {
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 	w.WriteHeader(503)
 }
 
 // 504; Gateway Timeout Error
 func Fiveohfour(w http.ResponseWriter, req *http.Request) {
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 	w.WriteHeader(504)
 }
 
 // 520; Cloudflare Defines invalid response codes as a 520:
 func Fivetwenty(w http.ResponseWriter, req *http.Request) {
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 	w.WriteHeader(69)
 }
 
@@ -367,6 +376,6 @@ func Fivetwenty(w http.ResponseWriter, req *http.Request) {
 // If this becomes obnoxious, you could set the Timeout < 100 seconds
 // https://api.cloudflare.com/#zone-settings-change-proxy-read-timeout-setting
 func Fivetwentyfour(w http.ResponseWriter, req *http.Request) {
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	Printlog(req)
 	time.Sleep(101 * time.Second)
 }
