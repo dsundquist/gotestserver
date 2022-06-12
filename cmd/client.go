@@ -11,7 +11,7 @@ import (
 )
 
 var clientCmd = &cobra.Command{
-	Use:   "client",
+	Use:   "client [location]",
 	Short: "And HTTP(s) client",
 	Long:  `Used to create to the Server instance`,
 	Run: func(cmd *cobra.Command, args []string) {

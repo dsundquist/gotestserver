@@ -85,11 +85,7 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 
 ## Todo
 
-* Implement / Finish mTLS server
 * Add more to the client side, this is still up in the air what will happen here. 
-* Added a /Vary, to test some headers, clean this up
-* Added a /Cache, to test other headers, clean this up
 * Make something like localhost/response?header1=value1&header2=value2 to specify response headers for testing random headers? 
-* Document all of the above in this README / --help
 * Read from a config.yaml file [SPF13 - Viper](https://github.com/spf13/viper)
 * We should rename this 

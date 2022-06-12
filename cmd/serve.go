@@ -5,7 +5,7 @@ Copyright © 2022 Dean Sundquist dean@sundquist.net
 package cmd
 
 import (
-	tls2 "crypto/tls"
+	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -26,10 +26,13 @@ var serveCmd = &cobra.Command{
 	Long:  `Use this command to start the webserver, at this time it will use port 80`,
 	Run: func(cmd *cobra.Command, args []string) {
 		port, _ := cmd.Flags().GetInt("port")
-		tls, _ := cmd.Flags().GetBool("tls")
+		https, _ := cmd.Flags().GetBool("tls")
 		mtls, _ := cmd.Flags().GetBool("mtls")
+		cert, _ := cmd.Flags().GetString("cert")
+		key, _ := cmd.Flags().GetString("key")
+		clientCert, _ := cmd.Flags().GetString("clientcert")
 
-		if tls {
+		if https || mtls {
 			if port == 80 {
 				fmt.Print("Found default port of 80 setting it to 443 for HTTPS Server\n")
 				port = 443
@@ -38,7 +41,8 @@ var serveCmd = &cobra.Command{
 		} else {
 			fmt.Printf("Starting HTTP Server on port: %v\n", port)
 		}
-		serve(port, tls, mtls)
+		// fmt.Printf("Port: %v, https: %v, mtls: %v, cert: %v, key: %v, clientCert: %v\n", port, https, mtls, cert, key, clientCert)
+		serve(port, https, mtls, cert, key, clientCert)
 	},
 }
 
@@ -46,14 +50,14 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
-func serve(port int, tls bool, mtls bool) {
+func serve(port int, https bool, mtls bool, cert string, key string, clientCert string) {
 	var err error
 
 	http.HandleFunc("/", PrintHeaders) // Default prints request headersi
 	http.HandleFunc("/cache", Cache)
-	http.HandleFunc("/help", Help)
+	http.HandleFunc("/cookie", Cookie)
 	http.HandleFunc("/cors", Cors)
-	http.HandleFunc("/setcookie", Setcookies)
+	http.HandleFunc("/help", Help)
 	http.HandleFunc("/403", Fourohthree)
 	http.HandleFunc("/404", Fourohfour)
 	http.HandleFunc("/405", Fourohfive)
@@ -68,47 +72,41 @@ func serve(port int, tls bool, mtls bool) {
 
 	if mtls {
 
-		// TODO:
-		//
-		//  Ongoing work here, credit to: https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go
-		//
-		//  1. Why did I need to rename the crypto/tls package, wtf else is using tls
-		//  2. Need better erroring here, like you need server.crt, server.key AND client.crt
-		//  3. fmt.Printf("Starting mTLS Server, port: %v, tls: %v, mtls: %v\n", port, tls, mtls)
-		//
+		// Credit to: https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go
+		// Need better erroring here, like you need server.crt, server.key AND client.crt
+		// fmt.Print("Starting mTLS Server, will need ./server.crt, ./server.key, and ./client.crt...\n")
 
-		fmt.Print("Starting mTLS Server, will need ./server.crt, ./server.key, and ./client.crt...\n")
 		// Create a CA certificate pool and add cert.pem to it
-		caCert, err := ioutil.ReadFile("client.crt")
-		if err != nil {
+		var caCert []byte
+		caCert, err = ioutil.ReadFile(clientCert)
+		if errors.Is(err, os.ErrNotExist) {
+			log.Print("Please generate a client certificate:")
+			log.Print("openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -out client.crt -keyout client.key -subj \"/C=US/ST=Texas/L=Austin/O=Sundquist/OU=DevOps/CN=localhost\"")
+			log.Fatal(err)
+		} else if err != nil {
 			log.Fatal(err)
 		}
+
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)
 
 		// Create the TLS Config with the CA pool and enable Client certificate validation
-		tlsConfig := &tls2.Config{
+		tlsConfig := &tls.Config{
 			ClientCAs:  caCertPool,
-			ClientAuth: tls2.RequireAndVerifyClientCert,
+			ClientAuth: tls.RequireAndVerifyClientCert,
 		}
 
-		// TODO:
-		// What is this command, why is it deprecated, and why don't I need this for this to work?
-		// tlsConfig.BuildNameToCertificate()
+		tlsConfig.BuildNameToCertificate()
 
 		server := &http.Server{
 			Addr:      location,
 			TLSConfig: tlsConfig,
 		}
 
-		err = server.ListenAndServeTLS("./server.crt", "./server.key")
+		err = server.ListenAndServeTLS(cert, key)
 
-		if err != nil {
-			log.Fatal(err)
-		}
-
-	} else if tls {
-		err = http.ListenAndServeTLS(location, "./server.crt", "./server.key", nil)
+	} else if https {
+		err = http.ListenAndServeTLS(location, cert, key, nil)
 	} else {
 		err = http.ListenAndServe(location, nil)
 	}
@@ -116,18 +114,11 @@ func serve(port int, tls bool, mtls bool) {
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			//https://medium.com/rungo/secure-https-servers-in-go-a783008b36da
-			log.Print("Please Generate a key pair and x509 certificate:")
-			log.Print("\topenssl req  -new  -newkey rsa:2048  -nodes  -keyout server.key  -out server.csr")
-			log.Print("\topenssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server.crt")
-
-			// Or (from https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go)
-			//openssl req -newkey rsa:2048 \
-			//-new -nodes -x509 \
-			//-days 3650 \
-			//-out server.crt \
-			//-keyout server.key \
-			//-subj "/C=US/ST=California/L=Mountain View/O=Your Organization/OU=Your Unit/CN=localhost"
-
+			log.Print("Please generate a key and x509 certificate:")
+			// From https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go
+			log.Print("openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -out server.crt -keyout server.key -subj \"/C=US/ST=Texas/L=Austin/O=Sundquist/OU=DevOps/CN=localhost\"")
+			// log.Print("\topenssl req  -new  -newkey rsa:2048  -nodes  -keyout server.key  -out server.csr")
+			// log.Print("\topenssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server.crt")
 		}
 		log.Fatal(err)
 	}
@@ -166,8 +157,8 @@ func Cors(w http.ResponseWriter, req *http.Request) {
 		"</script>"
 
 	fmt.Fprintf(w, "%v\n", response)
-
 }
+
 func PrintHeaders(w http.ResponseWriter, req *http.Request) {
 
 	var response string
@@ -188,7 +179,7 @@ func PrintHeaders(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "%v\n", response)
 }
 
-func Setcookies(w http.ResponseWriter, req *http.Request) {
+func Cookie(w http.ResponseWriter, req *http.Request) {
 
 	/*
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
@@ -237,7 +228,6 @@ func Setcookies(w http.ResponseWriter, req *http.Request) {
 	response += "\tcookie.SameSite: %v\n"
 
 	fmt.Fprintf(w, response, cookie.Name, cookie.Value, cookie.Path, cookie.Domain, cookie.Expires, cookie.MaxAge, cookie.Secure, cookie.HttpOnly, cookie.SameSite)
-
 }
 
 func Help(w http.ResponseWriter, req *http.Request) {
@@ -274,19 +264,12 @@ func Help(w http.ResponseWriter, req *http.Request) {
 	response += "\t <a href =\"https://522.sundquist.net/\">522 - No tunnel</a><br>\n"
 	response += "\t <a href =\"https://522-tunnel.sundquist.net/\">522 - With tunnel</a><br>\n"
 	response += "\t <a href =\"/Cache\">Returns a page with a cache header set</a><br>\n"
-	response += "\t <a href =\"/setcookie\">Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
+	// response += "\t <a href =\"/Cors\">Testing CORS behind Cloudflare, probably broke</a><br>\n" // This was testing for a specific ticket.
+	response += "\t <a href =\"/cookie\">Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
+	response += "\t <a href =\"/response\">Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
 
 	fmt.Fprintf(w, "%v\n", response)
 }
-
-// An experiment playing with an issue in Cloudflare Access where an application behind Access is attempting to call
-// a second application which is also behind Access.  This is currently not supported.  We call this Single Page Apps.
-
-// Set Cookie
-// I original had attempted to play with the CF_Authorization Cookie, to see if I could rescope it to the apex domain.
-// That had no impact, and it is now commented out (Might get back to this experiment).
-// What now exists is a simple ability to set a cookie.
-// This can be used to test set-cookie behind a proxy.
 
 // 403; Forbidden
 func Fourohthree(w http.ResponseWriter, req *http.Request) {
@@ -338,7 +321,6 @@ func Fivetwenty(w http.ResponseWriter, req *http.Request) {
 
 // 524; Cloudflare's timeout is 100 seconds so lets add just 1 second to the default
 // If this becomes obnoxious, you could set the Timeout < 100 seconds
-// Yes you can do this, most individual use this to increase the timout, but you *can* decrease it
 // https://api.cloudflare.com/#zone-settings-change-proxy-read-timeout-setting
 func Fivetwentyfour(w http.ResponseWriter, req *http.Request) {
 	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
