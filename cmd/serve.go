@@ -54,11 +54,11 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	var err error
 
 	http.HandleFunc("/", PrintHeaders) // Default prints request headersi
-	http.HandleFunc("/cache", Cache)
 	http.HandleFunc("/cookie", Cookie)
 	http.HandleFunc("/cors", Cors)
 	http.HandleFunc("/help", Help)
 	http.HandleFunc("/readme", Readme)
+	http.HandleFunc("/response", Response)
 	http.HandleFunc("/public/", Servefiles)
 	http.HandleFunc("/403", Fourohthree)
 	http.HandleFunc("/404", Fourohfour)
@@ -142,19 +142,6 @@ func PrintHeaders(w http.ResponseWriter, req *http.Request) {
 			response += fmt.Sprintf("Header: %v Value: %v \n", name, value)
 		}
 	}
-
-	fmt.Fprintf(w, "%v\n", response)
-}
-
-func Cache(w http.ResponseWriter, req *http.Request) {
-
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
-
-	var response string
-
-	w.Header().Add("Cache-Control", "max-age=300")
-
-	response += "Set cache value!\n"
 
 	fmt.Fprintf(w, "%v\n", response)
 }
@@ -292,9 +279,33 @@ func Readme(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "%v\n", string(response))
 }
 
+func Response(w http.ResponseWriter, req *http.Request) {
+
+	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+
+	response := "Setting the following response headers: \n"
+
+	queries := req.URL.Query()
+
+	for k, values := range queries {
+		for _, v := range values {
+			response += "\t[" + k + ", " + v + "]\n"
+			w.Header().Add(k, v)
+		}
+	}
+
+	fmt.Fprintf(w, "%v\n", string(response))
+}
+
 func Servefiles(w http.ResponseWriter, req *http.Request) {
 
 	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+
+	_, err := os.Stat("./public")
+
+	if err != nil {
+		log.Println("Please create the a folder ./public for serving files.")
+	}
 
 	path := "." + req.URL.Path
 	if path == "./" {

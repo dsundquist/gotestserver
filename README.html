@@ -101,9 +101,6 @@ openssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server
 <p>Add more to the client side, this is still up in the air what will happen here.</p>
 </li>
 <li>
-<p>Make something like localhost/response?header1=value1&amp;header2=value2 to specify response headers for testing random headers?</p>
-</li>
-<li>
 <p>Read from a config.yaml file <a href="https://github.com/spf13/viper">SPF13 - Viper</a></p>
 </li>
 <li>
@@ -113,8 +110,8 @@ openssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server
 <p>Document:</p>
 <ul>
 <li>mTLS</li>
-<li>Cache / Vary (?), or just wait for /resonse and remove these</li>
 <li>Client and its uselessness</li>
+<li>Response, ie. <code>localhost/response?header1=value1&amp;header2=value2</code></li>
 </ul>
 </li>
 </ul>
