@@ -17,7 +17,12 @@ var clientCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		location, _ := cmd.Flags().GetString("location")
 		insecure, _ := cmd.Flags().GetBool("insecure")
-		client(location, insecure)
+		if len(args) > 0 { // we'll use the 1st argument if it exists
+			fmt.Println(args[0])
+			log.Fatal(client(args[0], insecure))
+		} else {
+			log.Fatal(client(location, insecure))
+		}
 	},
 }
 
@@ -25,7 +30,7 @@ func init() {
 	rootCmd.AddCommand(clientCmd)
 }
 
-func client(location string, insecure bool) {
+func client(location string, insecure bool) error {
 
 	//Ignore bad / self signed certificates.
 	if insecure {
@@ -38,16 +43,18 @@ func client(location string, insecure bool) {
 
 	r, err := http.Get(location)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// Read the response body
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// Print the response body to stdout
 	fmt.Printf("%s\n", body)
+
+	return nil
 }
