@@ -85,7 +85,6 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 
 ## Todo
 
-* Organize HTTP HandleFunch methods in serve.go (maybe pull out the 5xx errors into another file) by alphabetical
 * Implement / Finish mTLS server
 * Add more to the client side, this is still up in the air what will happen here. 
 * Added a /Vary, to test some headers, clean this up
