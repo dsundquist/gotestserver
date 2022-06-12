@@ -58,6 +58,8 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	http.HandleFunc("/cookie", Cookie)
 	http.HandleFunc("/cors", Cors)
 	http.HandleFunc("/help", Help)
+	http.HandleFunc("/readme", Readme)
+	http.HandleFunc("/public/", Servefiles)
 	http.HandleFunc("/403", Fourohthree)
 	http.HandleFunc("/404", Fourohfour)
 	http.HandleFunc("/405", Fourohfive)
@@ -124,50 +126,15 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	}
 }
 
-func Cache(w http.ResponseWriter, req *http.Request) {
-
-	var response string
-
-	w.Header().Add("Cache-Control", "max-age=300")
-
-	response += "Set cache value!\n"
-
-	fmt.Fprintf(w, "%v\n", response)
-}
-
-func Cors(w http.ResponseWriter, req *http.Request) {
-
-	var response string
-
-	w.Header().Add("Content-Type", "text/html")
-	//  w.Header().Add("Access-Control-Allow-Origin","https://one.tun.sundquist.net")
-	//  w.Header().Add("Access-Control-Max-Age","60")
-	w.Header().Add("Access-Control-Allow-Credentials", "true")
-
-	response += "" +
-		"\n\n\n\n\n Next Fetch \n\n" +
-		"<script crossorigin=\"use-credentials\">" +
-		"console.log(\"Testing2\");" +
-		"\n" +
-		"const myHeaders = new Headers ({'X-Custom-Header':'Hello-World'});" +
-		"fetch('https://one.tun.sundquist.net/setcookie', {headers: {}, credentials: 'include'});" +
-		"fetch('https://one.tun.sundquist.net/', {headers: {}, credentials: 'include'});" +
-		"fetch('https://two.tun.sundquist.net/', {headers: {myHeaders}, credentials: 'include'});" +
-		//  "fetch('https://two.tun.sundquist.net/', {credentials: 'include'});" +
-		"</script>"
-
-	fmt.Fprintf(w, "%v\n", response)
-}
-
 func PrintHeaders(w http.ResponseWriter, req *http.Request) {
+
+	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
 
 	var response string
 
 	response += "Hello from a very basic Go HTTPS server implementation! ;)\n\n"
 	response += fmt.Sprintf("Remote Address: %v\n\n", req.RemoteAddr)
 	response += fmt.Sprintf("Host: %v \n", req.Host)
-
-	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
 
 	for name, values := range req.Header {
 		// Loop over all values for the name.
@@ -179,7 +146,22 @@ func PrintHeaders(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "%v\n", response)
 }
 
+func Cache(w http.ResponseWriter, req *http.Request) {
+
+	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+
+	var response string
+
+	w.Header().Add("Cache-Control", "max-age=300")
+
+	response += "Set cache value!\n"
+
+	fmt.Fprintf(w, "%v\n", response)
+}
+
 func Cookie(w http.ResponseWriter, req *http.Request) {
+
+	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
 
 	/*
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
@@ -230,6 +212,32 @@ func Cookie(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, response, cookie.Name, cookie.Value, cookie.Path, cookie.Domain, cookie.Expires, cookie.MaxAge, cookie.Secure, cookie.HttpOnly, cookie.SameSite)
 }
 
+func Cors(w http.ResponseWriter, req *http.Request) {
+
+	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+
+	var response string
+
+	w.Header().Add("Content-Type", "text/html")
+	//  w.Header().Add("Access-Control-Allow-Origin","https://one.tun.sundquist.net")
+	//  w.Header().Add("Access-Control-Max-Age","60")
+	w.Header().Add("Access-Control-Allow-Credentials", "true")
+
+	response += "" +
+		"\n\n\n\n\n Next Fetch \n\n" +
+		"<script crossorigin=\"use-credentials\">" +
+		"console.log(\"Testing2\");" +
+		"\n" +
+		"const myHeaders = new Headers ({'X-Custom-Header':'Hello-World'});" +
+		"fetch('https://one.tun.sundquist.net/setcookie', {headers: {}, credentials: 'include'});" +
+		"fetch('https://one.tun.sundquist.net/', {headers: {}, credentials: 'include'});" +
+		"fetch('https://two.tun.sundquist.net/', {headers: {myHeaders}, credentials: 'include'});" +
+		//  "fetch('https://two.tun.sundquist.net/', {credentials: 'include'});" +
+		"</script>"
+
+	fmt.Fprintf(w, "%v\n", response)
+}
+
 func Help(w http.ResponseWriter, req *http.Request) {
 
 	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
@@ -239,15 +247,17 @@ func Help(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", "text/html")
 
 	response += "<h2>Available Locations: </h2>\n"
-	response += "\t <a href =\"/403\">/403</a><br>\n"
-	response += "\t <a href =\"/404\">/404</a><br>\n"
-	response += "\t <a href =\"/405\">/405</a><br>\n"
-	response += "\t <a href =\"/500\">/500</a><br>\n"
-	response += "\t <a href =\"/502\">/502</a><br>\n"
-	response += "\t <a href =\"/503\">/503</a><br>\n"
-	response += "\t <a href =\"/504\">/504</a><br>\n"
-	response += "\t <a href =\"/520\">/520</a><br>\n"
-	response += "\t <a href =\"/524\">/524</a><br>\n"
+	response += "&emsp; <a href =\"/403\">/403</a><br>\n"
+	response += "&emsp; <a href =\"/404\">/404</a><br>\n"
+	response += "&emsp; <a href =\"/405\">/405</a><br>\n"
+	response += "&emsp; <a href =\"/500\">/500</a><br>\n"
+	response += "&emsp; <a href =\"/502\">/502</a><br>\n"
+	response += "&emsp; <a href =\"/503\">/503</a><br>\n"
+	response += "&emsp; <a href =\"/504\">/504</a><br>\n"
+	response += "&emsp; <a href =\"/520\">/520</a><br>\n"
+	response += "&emsp; <a href =\"/524\">/524</a><br>\n"
+	response += "&emsp; <a href =\"https://522.sundquist.net/\">522 - No tunnel</a><br>\n"
+	response += "&emsp; <a href =\"https://522-tunnel.sundquist.net/\">522 - With tunnel</a><br>\n"
 
 	// 522 is an error that occurs at the networking level
 	// It is outlined here:
@@ -260,15 +270,38 @@ func Help(w http.ResponseWriter, req *http.Request) {
 	// -P OUTPUT ACCEPT
 	// -A INPUT -i eth1 -p tcp -m tcp --dport 80 -j DROP
 	// -A INPUT -i eth0 -p tcp -m tcp --dport 80 -j DROP
-	response += "Other: <br>\n"
-	response += "\t <a href =\"https://522.sundquist.net/\">522 - No tunnel</a><br>\n"
-	response += "\t <a href =\"https://522-tunnel.sundquist.net/\">522 - With tunnel</a><br>\n"
-	response += "\t <a href =\"/Cache\">Returns a page with a cache header set</a><br>\n"
+	response += "<h3>Other:</h3>\n"
+	response += "&emsp; <a href =\"/cache\">/cache - Returns a page with a cache header set</a><br>\n"
 	// response += "\t <a href =\"/Cors\">Testing CORS behind Cloudflare, probably broke</a><br>\n" // This was testing for a specific ticket.
-	response += "\t <a href =\"/cookie\">Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
-	response += "\t <a href =\"/response\">Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
+	response += "&emsp; <a href =\"/cookie\">/cookie - Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
+	response += "&emsp; <a href =\"/readme\">/readme - The README page for this program</a><br>\n"
+	response += "&emsp; <a href =\"/response\">/response - Working on this</a><br>\n"
 
 	fmt.Fprintf(w, "%v\n", response)
+}
+
+func Readme(w http.ResponseWriter, req *http.Request) {
+
+	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+
+	response, err := ioutil.ReadFile("./README.html")
+	if err != nil {
+		log.Printf("unable to read file: %v", err)
+	}
+
+	fmt.Fprintf(w, "%v\n", string(response))
+}
+
+func Servefiles(w http.ResponseWriter, req *http.Request) {
+
+	log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+
+	path := "." + req.URL.Path
+	if path == "./" {
+		path = "./public/index.html"
+	}
+
+	http.ServeFile(w, req, path)
 }
 
 // 403; Forbidden

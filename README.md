@@ -89,3 +89,9 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 * Make something like localhost/response?header1=value1&header2=value2 to specify response headers for testing random headers? 
 * Read from a config.yaml file [SPF13 - Viper](https://github.com/spf13/viper)
 * We should rename this 
+
+* Document: 
+  * mTLS 
+  * Cache / Vary (?), or just wait for /resonse and remove these
+  * Client and its uselessness 
+  
