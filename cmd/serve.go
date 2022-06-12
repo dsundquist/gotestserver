@@ -54,6 +54,7 @@ func serve(port int, tls bool, mtls bool) {
 	http.HandleFunc("/help", Help)
 	http.HandleFunc("/cors", Cors)
 	http.HandleFunc("/setcookie", Setcookies)
+    http.HandleFunc("/vary", Vary)
 	http.HandleFunc("/403", Fourohthree)
 	http.HandleFunc("/404", Fourohfour)
 	http.HandleFunc("/405", Fourohfive)
@@ -193,6 +194,20 @@ func Help(w http.ResponseWriter, req *http.Request) {
     response += "\t <a href =\"/setcookie\">Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
 
 	fmt.Fprintf(w, "%v\n", response)
+}
+
+
+func Vary(w http.ResponseWriter, req *http.Request){
+
+	var response string
+
+	w.Header().Add("Vary", "null")
+
+	response += "Set vary value!\n"
+
+	fmt.Fprintf(w, "%v\n", response)
+
+
 }
 
 

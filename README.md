@@ -85,4 +85,11 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 
 ## Todo
 
-* Implement mTLS server 
+* Organize HTTP HandleFunch methods in serve.go (maybe pull out the 5xx errors into another file) by alphabetical
+* Implement / Finish mTLS server
+* Building out the client side here (not sure of the use yet), maybe it'll just be easier to implement with the server (?)
+* Client call shouldn't need a -l, call should be like `httperrors client -k https://1.2.3.4/` instead of `httperrors client -kl https://1.2.3.4/`
+* Added a /Vary, to test some headers, clean this up
+* Added a /Cache, to test other headers, clean this up
+* Make something like localhost/response?header1=value1&header2=value2 to specify response headers for testing random headers? 
+* Document all of the above in this README / --help
