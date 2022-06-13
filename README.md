@@ -91,7 +91,9 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 * We should rename this 
 
 * Document: 
-  * mTLS 
+  * mTLS
+  * Necessary file structure for all functions to work  
+  * The public folder
   * debugging
   * Client and its uselessness 
   * Response, ie. `localhost/response?header1=value1&header2=value2`
