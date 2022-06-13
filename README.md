@@ -88,7 +88,7 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 * Add more to the client side, this is still up in the air what will happen here. 
 * Read from a config.yaml file [SPF13 - Viper](https://github.com/spf13/viper)
 * Write debugging to a file  
-* We should rename this 
+* We should rename this <- thinking about calling this gotestserver, bought gotestserver.com  
 
 * Document: 
   * mTLS
