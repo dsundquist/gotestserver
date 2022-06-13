@@ -19,6 +19,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var debug bool = false
+
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
@@ -31,6 +33,7 @@ var serveCmd = &cobra.Command{
 		cert, _ := cmd.Flags().GetString("cert")
 		key, _ := cmd.Flags().GetString("key")
 		clientCert, _ := cmd.Flags().GetString("clientcert")
+		debug, _ = cmd.Flags().GetBool("debug")
 
 		if https || mtls {
 			if port == 80 {
@@ -127,6 +130,46 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 }
 
 func Printlog(req *http.Request) {
+
+	if debug {
+
+		var output string
+		// Top level information
+		output += "Debug Enabled, dropping entire request: \n\n"
+		output += "Remote Addr: " + req.RemoteAddr + "\n"
+		output += "Method: " + req.Method + "\n"
+		output += "Requested Resource: " + req.RequestURI + "\n"
+		output += "Protocol: " + req.Proto + "\n"
+
+		// Print the headers, can this look better?
+		output += "Headers: \n"
+		for i, headers := range req.Header {
+			output += "\t [" + i + ";"
+			for j, v := range headers {
+				// output += strconv.Itoa(j)
+				if j == len(headers)-1 {
+					output += v
+				} else {
+					output += v + ","
+				}
+			}
+			output += "]\n"
+		}
+
+		//Output the body
+		output += "Body: \n"
+		bodyBytes, err := ioutil.ReadAll(req.Body)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		output += string(bodyBytes) + "\n"
+
+		// Output the generated log
+		log.Println(output)
+
+	}
 
 	if req.Header.Get("CF-Connecting-IP") != "" {
 		log.Println("Connection from: " + req.Header.Get("CF-Connecting-IP") + " via " + req.RemoteAddr + " to resource: " + req.RequestURI)
