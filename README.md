@@ -87,8 +87,16 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 
 * Add more to the client side, this is still up in the air what will happen here. 
 * Read from a config.yaml file [SPF13 - Viper](https://github.com/spf13/viper)
-* Write debugging to a file  
-* We should rename this <- thinking about calling this gotestserver, bought gotestserver.com  
+* Write debugging to a file, https://stackoverflow.com/questions/19965795/how-to-write-log-to-file
+* Implement QUIC,  https://pkg.go.dev/github.com/lucas-clemente/quic-go/http3
+* Update the main page to return, port that it hit, along with HTTP version, 
+
+* gotestserver.com - Going to start moving this project over to this url, likely rename the repo to gotestserver
+  * tunnel.gotestserver.com - behind a cloudflare tunnels
+  * access.gotestserver.com - behind access
+  * 522.gotestserver.com - Serve the 522 error page
+  * quic.gotestserver.com - Serve QUIC - we could do this by a normal port (ie. 8080), or create a worker, https://pkg.go.dev/net/http#Request
+
 
 * Document: 
   * mTLS
