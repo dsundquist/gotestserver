@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -35,6 +36,7 @@ var serveCmd = &cobra.Command{
 		clientCert, _ := cmd.Flags().GetString("clientcert")
 		debug, _ = cmd.Flags().GetBool("debug")
 		tlsVersion, _ := cmd.Flags().GetString("tls")
+		ciphers, _ := cmd.Flags().GetString("ciphers")
 
 		if https || mtls {
 			if port == 80 {
@@ -46,7 +48,7 @@ var serveCmd = &cobra.Command{
 			fmt.Printf("Starting HTTP Server on port: %v\n", port)
 		}
 		// fmt.Printf("Port: %v, https: %v, mtls: %v, cert: %v, key: %v, clientCert: %v\n", port, https, mtls, cert, key, clientCert)
-		serve(port, https, mtls, cert, key, clientCert, tlsVersion)
+		serve(port, https, mtls, cert, key, clientCert, tlsVersion, ciphers)
 	},
 }
 
@@ -54,7 +56,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
-func serve(port int, https bool, mtls bool, cert string, key string, clientCert string, tlsVersion string) {
+func serve(port int, https bool, mtls bool, cert string, key string, clientCert string, tlsVersion string, ciphers string) {
 	var err error
 
 	http.HandleFunc("/", Request) // Default prints request headers
@@ -113,31 +115,66 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 	} else if https { // The HTTPS Server
 
-		fmt.Println("Entering HTTPS call: ")
-
 		var setTlsVersion uint16 = tls.VersionTLS10 // default would be 1.0
 
 		if tlsVersion == "1.0" {
-			fmt.Println("Using TLS version 1.0")
+			fmt.Println("Using Minimum TLS version 1.0")
 			setTlsVersion = tls.VersionTLS10
 		} else if tlsVersion == "1.1" {
-			fmt.Println("Using TLS version 1.1")
+			fmt.Println("Using Minimum TLS version 1.1")
 			setTlsVersion = tls.VersionTLS11
 		} else if tlsVersion == "1.2" {
-			fmt.Println("Using TLS version 1.2")
+			fmt.Println("Using Minimum TLS version 1.2")
 			setTlsVersion = tls.VersionTLS12
 		} else if tlsVersion == "1.3" {
-			fmt.Println("Using TLS version 1.3")
+			fmt.Println("Using Minimum TLS version 1.3")
 			setTlsVersion = tls.VersionTLS13
 		} else {
-			log.Fatal("Invalid TLS version, please choose from: 1.0, 1.1, 1.2, 1.3")
+			log.Fatal("Invalid Minimum TLS version, please choose from: 1.0, 1.1, 1.2, 1.3")
+		}
+
+		var tlsCiphers []uint16
+
+		cipherSlice := strings.Split(ciphers, ",")
+
+		availableCiphers := map[string]uint16{
+			"TLS_RSA_WITH_RC4_128_SHA":                      0x0005,
+			"TLS_RSA_WITH_3DES_EDE_CBC_SHA":                 0x000a,
+			"TLS_RSA_WITH_AES_128_CBC_SHA":                  0x002f,
+			"TLS_RSA_WITH_AES_256_CBC_SHA":                  0x0035,
+			"TLS_RSA_WITH_AES_128_CBC_SHA256":               0x003c,
+			"TLS_RSA_WITH_AES_128_GCM_SHA256":               0x009c,
+			"TLS_RSA_WITH_AES_256_GCM_SHA384":               0x009d,
+			"TLS_ECDHE_ECDSA_WITH_RC4_128_SHA":              0xc007,
+			"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA":          0xc009,
+			"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA":          0xc00a,
+			"TLS_ECDHE_RSA_WITH_RC4_128_SHA":                0xc011,
+			"TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA":           0xc012,
+			"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA":            0xc013,
+			"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA":            0xc014,
+			"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256":       0xc023,
+			"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256":         0xc027,
+			"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256":         0xc02f,
+			"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256":       0xc02b,
+			"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384":         0xc030,
+			"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384":       0xc02c,
+			"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256":   0xcca8,
+			"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256": 0xcca9,
+			"TLS_AES_128_GCM_SHA256":                        0x1301,
+			"TLS_AES_256_GCM_SHA384":                        0x1302,
+			"TLS_CHACHA20_POLY1305_SHA256":                  0x1303,
+		}
+
+		for _, cipher := range cipherSlice {
+			for available, value := range availableCiphers {
+				if cipher == available {
+					fmt.Printf("available: %v value: %v\n", available, value)
+				}
+			}
 		}
 
 		tlsConfig := &tls.Config{
-			CipherSuites: []uint16{
-				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			},
+			CipherSuites:             tlsCiphers,
 			MinVersion:               setTlsVersion,
 			PreferServerCipherSuites: true,
 		}
