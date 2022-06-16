@@ -2,11 +2,11 @@
 
 This tool was designed for troubleshooting requests when behind a reverse proxy, primarily Cloudflare.  It is a personal project that I use as a Technical Support Engineer. It can also be placed behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/) and [cloudflared Tunnels](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/) for troubleshooting. 
 
-**There are 4 certs that are included as examples, please delete these if you're running this in production**
+### There are 4 certs that are included as examples, please delete these if you're running this in production 
 
 ## Install 
 
-To install go see: [Go - Download and install](https://go.dev/doc/install)
+Install Go: [Go - Download and install](https://go.dev/doc/install)
 
 ```
 go install github.com/dsundquist/gotestserver@latest
@@ -26,7 +26,7 @@ If you wish to not use the default port of 80, you can start the http server on 
 ~/go/bin/gotestserver serve -p 8080
 ```
 
-If you want to run an https server you'll need a self signed certificate.  You can run the following 2x commands: 
+If you want to run an https server you can use the defaults that are included in the repo.  You should replace these with the following: 
 
 ```
 openssl req  -new  -newkey rsa:2048  -nodes  -keyout server.key  -out server.csr
@@ -57,13 +57,11 @@ The CLI is built from [Cobra](https://github.com/spf13/cobra), to see additional
 
 ## HTTP Server Behavior 
 
-The main page will just return back the request headers that the server had received.  This can be useful for analysis when behind a reverse proxy or a product like [Cloudflared](https://github.com/cloudflare/cloudflared) 
+The main page will serve `./index.html`.
 
-To use generate 5xx errors, for troubleshooting behind Cloudflare, visit: 
+Any pages that are not found, (besides the `/public` directory, which acts as a normal webserver) will return the request headers. 
 
-```
-http://localhost/help
-```
+This can be useful for analysis when behind a reverse proxy or a product like [Cloudflared](https://github.com/cloudflare/cloudflared) 
 
 ## The 522 Error Page
 
@@ -92,14 +90,8 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 * Add more to the client side, this is still up in the air what will happen here. 
 * Read from a config.yaml file [SPF13 - Viper](https://github.com/spf13/viper)
 * Write debugging to a file, https://stackoverflow.com/questions/19965795/how-to-write-log-to-file
+* Can we force to an http version? ie. http1.0, http1.1, http2, https://stackoverflow.com/questions/53367809/how-to-force-client-to-use-http-2-instead-of-falling-back-to-http-1-1
 * Implement QUIC,  https://pkg.go.dev/github.com/lucas-clemente/quic-go/http3
-* Update the main page to return, port that it hit, along with HTTP version, 
-
-* gotestserver.com - Going to start moving this project over to this url, likely rename the repo to gotestserver
-  * tunnel.gotestserver.com - behind a cloudflare tunnels
-  * access.gotestserver.com - behind access
-  * 522.gotestserver.com - Serve the 522 error page
-  * quic.gotestserver.com - Serve QUIC - we could do this by a normal port (ie. 8080), or create a worker, https://pkg.go.dev/net/http#Request
 
 * Document: 
   * mTLS
