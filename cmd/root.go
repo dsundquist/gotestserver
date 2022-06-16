@@ -12,7 +12,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "httperrors",
+	Use:   "gotestserver",
 	Short: "A webserver that'll return headers, or can generate 5xx errors",
 	Long: `
 	This is a webserver that was particularily designed for troubleshooting websites behind cloudflared

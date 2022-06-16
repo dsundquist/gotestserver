@@ -1,4 +1,4 @@
-module github.com/dsundquist/httperrors
+module github.com/dsundquist/gotestserver
 
 go 1.17
 
