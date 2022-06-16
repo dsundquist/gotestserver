@@ -295,8 +295,8 @@ func Help(w http.ResponseWriter, req *http.Request) {
 	response += "&emsp; <a href =\"/504\">/504</a><br>\n"
 	response += "&emsp; <a href =\"/520\">/520</a><br>\n"
 	response += "&emsp; <a href =\"/524\">/524</a><br>\n"
-	response += "&emsp; <a href =\"https://522.sundquist.net/\">522 - No tunnel</a><br>\n"
-	response += "&emsp; <a href =\"https://522-tunnel.sundquist.net/\">522 - With tunnel</a><br>\n"
+	response += "&emsp; <a href =\"https://522.gotestserver.com/\">522 - No tunnel</a><br>\n"
+	response += "&emsp; <a href =\"https://522-tunnel.gotestserver.com/\">522 - With tunnel</a><br>\n"
 
 	// 522 is an error that occurs at the networking level
 	// It is outlined here:
