@@ -2,7 +2,7 @@
 <html>
     <head>
     <title>Simple Go Webserver</title>   
-    <body style="font-family: 'Noto Sans', sans-serif;">
+    <body style="font-family: 'Noto Sans', sans-serif; max-width: 1000px; margin: auto; padding-top: 100px">
         
         <h2>Welcome to the gotestserver</h2>
 
@@ -21,23 +21,23 @@
         &emsp; <a href = "https://522.gotestserver.com">522.gotestserver.com</a> Server drops all ACK packets<br>
         &emsp; <a href = "https://522-tunnel.gotestserver.com">522-tunnel.gotestserver.com</a> The server behind a tunnel drops all ACK packets<br>
 
-        <h2>Local - Errors sub directories: </h2>
-        &emsp; <a href ="/403">/403</a><br>
-        &emsp; <a href ="/404">/404</a><br>
-        &emsp; <a href ="/405">/405</a><br>
-        &emsp; <a href ="/500">/500</a><br>
-        &emsp; <a href ="/502">/502</a><br>
-        &emsp; <a href ="/503">/503</a><br>
-        &emsp; <a href ="/504">/504</a><br>
-        &emsp; <a href ="/520">/520</a><br>
-        &emsp; <a href ="/524">/524</a><br>
+        <h2>Local - Error sub directories: </h2>
+        &emsp; <a href ="/403">/403</a> - Forbidden<br>
+        &emsp; <a href ="/404">/404</a> - Not Found<br>
+        &emsp; <a href ="/405">/405</a> - Method Not Allowed<br>
+        &emsp; <a href ="/500">/500</a> - Internal Server Error<br>
+        &emsp; <a href ="/502">/502</a> - Bad Gateway<br>
+        &emsp; <a href ="/503">/503</a> - Service Unavailable<br>
+        &emsp; <a href ="/504">/504</a> - Gateway Timeout<br>
+        &emsp; <a href ="/520">/520</a> - CF - Web server returns an unknown error<br>
+        &emsp; <a href ="/524">/524</a> - CF - A timeout occurred<br>
 
         <h3>Local - Other</h3>
-        &emsp; <a href ="/cookie">/cookie - Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>
-        &emsp; <a href ="/public">/public - Serve files from ./public </a><br>
-        &emsp; <a href ="/readme">/readme - The README page for this program</a><br>
-        &emsp; <a href ="/request">/request - Print the request headers as the server sees them</a><br>
-        &emsp; <a href ="/response">/response - Set the response headers, ex: https://www.gotestserver.com/response?header1=value1&header2=value2</a><br>
+        &emsp; <a href ="/cookie">/cookie</a> - Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared<br>
+        &emsp; <a href ="/public">/public</a> - Serve files from ./public<br>
+        &emsp; <a href ="/readme">/readme</a> - The README page for this program<br>
+        &emsp; <a href ="/request">/request</a> - Print the request headers as the server sees them<br>
+        &emsp; <a href ="/response?header1=value1&header2=value2">/response?header1=value1&header2=value2</a> - Set the response headers<br>
         <br>
         <i>The default is to return the request headers</i>
 
