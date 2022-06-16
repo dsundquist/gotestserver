@@ -24,7 +24,7 @@ var debug bool = false
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Serve the httperrors webserver",
+	Short: "Serve the gotesterver",
 	Long:  `Use this command to start the webserver, at this time it will use port 80`,
 	Run: func(cmd *cobra.Command, args []string) {
 		port, _ := cmd.Flags().GetInt("port")
