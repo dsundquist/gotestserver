@@ -61,7 +61,6 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 	http.HandleFunc("/", Request) // Default prints request headers
 	http.HandleFunc("/cookie", Cookie)
-	http.HandleFunc("/help", Help)
 	http.HandleFunc("/readme", Readme)
 	http.HandleFunc("/request", Request)
 	http.HandleFunc("/response", Response)
@@ -351,48 +350,6 @@ func Cookie(w http.ResponseWriter, req *http.Request) {
 	response += "\tcookie.SameSite: %v\n"
 
 	fmt.Fprintf(w, response, cookie.Name, cookie.Value, cookie.Path, cookie.Domain, cookie.Expires, cookie.MaxAge, cookie.Secure, cookie.HttpOnly, cookie.SameSite)
-}
-
-func Help(w http.ResponseWriter, req *http.Request) {
-
-	Printlog(req)
-
-	var response string
-
-	w.Header().Add("Content-Type", "text/html")
-
-	response += "<h2>Available Locations: </h2>\n"
-	response += "&emsp; <a href =\"/403\">/403</a><br>\n"
-	response += "&emsp; <a href =\"/404\">/404</a><br>\n"
-	response += "&emsp; <a href =\"/405\">/405</a><br>\n"
-	response += "&emsp; <a href =\"/500\">/500</a><br>\n"
-	response += "&emsp; <a href =\"/502\">/502</a><br>\n"
-	response += "&emsp; <a href =\"/503\">/503</a><br>\n"
-	response += "&emsp; <a href =\"/504\">/504</a><br>\n"
-	response += "&emsp; <a href =\"/520\">/520</a><br>\n"
-	response += "&emsp; <a href =\"/524\">/524</a><br>\n"
-	response += "&emsp; <a href =\"https://522.gotestserver.com/\">522 - No tunnel</a><br>\n"
-	response += "&emsp; <a href =\"https://522-tunnel.gotestserver.com/\">522 - With tunnel</a><br>\n"
-
-	// 522 is an error that occurs at the networking level
-	// It is outlined here:
-	// https://support.cloudflare.com/hc/en-us/articles/115003011431-Troubleshooting-Cloudflare-5XX-errors#522error
-	// So we'll be redirecting over to another server that is has an iptables rule set to drop ack packets to port 80,
-	// where we have a basic http server listening on that port.
-	// ~$ sudo iptables -S
-	// -P INPUT ACCEPT
-	// -P FORWARD ACCEPT
-	// -P OUTPUT ACCEPT
-	// -A INPUT -i eth1 -p tcp -m tcp --dport 80 -j DROP
-	// -A INPUT -i eth0 -p tcp -m tcp --dport 80 -j DROP
-	response += "<h3>Other:</h3>\n"
-	response += "&emsp; <a href =\"/cache\">/cache - Returns a page with a cache header set</a><br>\n"
-	// response += "\t <a href =\"/Cors\">Testing CORS behind Cloudflare, probably broke</a><br>\n" // This was testing for a specific ticket.
-	response += "&emsp; <a href =\"/cookie\">/cookie - Set Cookie - returns a cookie for testing through proxy, Access, and/or cloudflared</a><br>\n"
-	response += "&emsp; <a href =\"/readme\">/readme - The README page for this program</a><br>\n"
-	response += "&emsp; <a href =\"/response\">/response - Working on this</a><br>\n"
-
-	fmt.Fprintf(w, "%v\n", response)
 }
 
 func Readme(w http.ResponseWriter, req *http.Request) {
