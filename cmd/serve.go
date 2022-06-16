@@ -305,32 +305,24 @@ func Request(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	fmt.Fprintf(w, "%v\n", response)
+	_, err := os.Stat("./public")
+
+	if err != nil {
+		log.Println("Please create the a folder ./public for serving files.")
+	}
+
+	path := "." + req.URL.Path
+	if path == "./" {
+		path = "./index.html"
+		http.ServeFile(w, req, path)
+	} else {
+		fmt.Fprintf(w, "%v\n", response)
+	}
 }
 
 func Cookie(w http.ResponseWriter, req *http.Request) {
 
 	Printlog(req)
-
-	/*
-		w.Header().Add("Access-Control-Allow-Credentials", "true")
-		w.Header().Add("cache-control", "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0")
-
-		myCookie, err := req.Cookie("CF_Authorization")
-		if err != nil {
-			log.Println("No Cookies\n")
-			return
-		}
-
-		myCookie.Domain = "sundquist.net"
-		myCookie.HttpOnly = true
-		myCookie.Secure = true
-		myCookie.SameSite = 4
-		myCookie.Path = "/"
-		myCookie.MaxAge = 600
-		log.Println(myCookie)
-		http.SetCookie(w, myCookie)
-	*/
 
 	// Set the expiration date one year in the future, create a cooke and set it.
 	// https://go.dev/src/net/http/cookie.go
