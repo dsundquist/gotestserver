@@ -56,11 +56,11 @@ func init() {
 func serve(port int, https bool, mtls bool, cert string, key string, clientCert string) {
 	var err error
 
-	http.HandleFunc("/", PrintHeaders) // Default prints request headersi
+	http.HandleFunc("/", Request) // Default prints request headers
 	http.HandleFunc("/cookie", Cookie)
-	http.HandleFunc("/cors", Cors)
 	http.HandleFunc("/help", Help)
 	http.HandleFunc("/readme", Readme)
+	http.HandleFunc("/request", Request)
 	http.HandleFunc("/response", Response)
 	http.HandleFunc("/public/", Servefiles)
 	http.HandleFunc("/403", Fourohthree)
@@ -178,7 +178,7 @@ func Printlog(req *http.Request) {
 	}
 }
 
-func PrintHeaders(w http.ResponseWriter, req *http.Request) {
+func Request(w http.ResponseWriter, req *http.Request) {
 
 	Printlog(req)
 
@@ -249,32 +249,6 @@ func Cookie(w http.ResponseWriter, req *http.Request) {
 	response += "\tcookie.SameSite: %v\n"
 
 	fmt.Fprintf(w, response, cookie.Name, cookie.Value, cookie.Path, cookie.Domain, cookie.Expires, cookie.MaxAge, cookie.Secure, cookie.HttpOnly, cookie.SameSite)
-}
-
-func Cors(w http.ResponseWriter, req *http.Request) {
-
-	Printlog(req)
-
-	var response string
-
-	w.Header().Add("Content-Type", "text/html")
-	//  w.Header().Add("Access-Control-Allow-Origin","https://one.tun.sundquist.net")
-	//  w.Header().Add("Access-Control-Max-Age","60")
-	w.Header().Add("Access-Control-Allow-Credentials", "true")
-
-	response += "" +
-		"\n\n\n\n\n Next Fetch \n\n" +
-		"<script crossorigin=\"use-credentials\">" +
-		"console.log(\"Testing2\");" +
-		"\n" +
-		"const myHeaders = new Headers ({'X-Custom-Header':'Hello-World'});" +
-		"fetch('https://one.tun.sundquist.net/setcookie', {headers: {}, credentials: 'include'});" +
-		"fetch('https://one.tun.sundquist.net/', {headers: {}, credentials: 'include'});" +
-		"fetch('https://two.tun.sundquist.net/', {headers: {myHeaders}, credentials: 'include'});" +
-		//  "fetch('https://two.tun.sundquist.net/', {credentials: 'include'});" +
-		"</script>"
-
-	fmt.Fprintf(w, "%v\n", response)
 }
 
 func Help(w http.ResponseWriter, req *http.Request) {
