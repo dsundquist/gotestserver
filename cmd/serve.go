@@ -175,6 +175,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 		if ciphers != "nil" && len(cipherSlice) > 0 {
 			log.Fatalf(`Failed to match: %v to the available ciphers:
+	// TLS 1.0 - 1.2 cipher suites.
 	TLS_RSA_WITH_RC4_128_SHA
 	TLS_RSA_WITH_3DES_EDE_CBC_SHA
 	TLS_RSA_WITH_AES_128_CBC_SHA
@@ -196,6 +197,8 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
 	TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
 	TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+
+	// TLS 1.3 cipher suites.
 	TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
 	TLS_AES_128_GCM_SHA256
 	TLS_AES_256_GCM_SHA384
