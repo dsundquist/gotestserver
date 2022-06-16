@@ -28,12 +28,13 @@ var serveCmd = &cobra.Command{
 	Long:  `Use this command to start the webserver, at this time it will use port 80`,
 	Run: func(cmd *cobra.Command, args []string) {
 		port, _ := cmd.Flags().GetInt("port")
-		https, _ := cmd.Flags().GetBool("tls")
+		https, _ := cmd.Flags().GetBool("secure")
 		mtls, _ := cmd.Flags().GetBool("mtls")
 		cert, _ := cmd.Flags().GetString("cert")
 		key, _ := cmd.Flags().GetString("key")
 		clientCert, _ := cmd.Flags().GetString("clientcert")
 		debug, _ = cmd.Flags().GetBool("debug")
+		tlsVersion, _ := cmd.Flags().GetString("tls")
 
 		if https || mtls {
 			if port == 80 {
@@ -45,7 +46,7 @@ var serveCmd = &cobra.Command{
 			fmt.Printf("Starting HTTP Server on port: %v\n", port)
 		}
 		// fmt.Printf("Port: %v, https: %v, mtls: %v, cert: %v, key: %v, clientCert: %v\n", port, https, mtls, cert, key, clientCert)
-		serve(port, https, mtls, cert, key, clientCert)
+		serve(port, https, mtls, cert, key, clientCert, tlsVersion)
 	},
 }
 
@@ -53,7 +54,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
-func serve(port int, https bool, mtls bool, cert string, key string, clientCert string) {
+func serve(port int, https bool, mtls bool, cert string, key string, clientCert string, tlsVersion string) {
 	var err error
 
 	http.HandleFunc("/", Request) // Default prints request headers
@@ -110,14 +111,34 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 		err = server.ListenAndServeTLS(cert, key)
 
-	} else if https {
+	} else if https { // The HTTPS Server
+
+		fmt.Println("Entering HTTPS call: ")
+
+		var setTlsVersion uint16 = tls.VersionTLS10 // default would be 1.0
+
+		if tlsVersion == "1.0" {
+			fmt.Println("Using TLS version 1.0")
+			setTlsVersion = tls.VersionTLS10
+		} else if tlsVersion == "1.1" {
+			fmt.Println("Using TLS version 1.1")
+			setTlsVersion = tls.VersionTLS11
+		} else if tlsVersion == "1.2" {
+			fmt.Println("Using TLS version 1.2")
+			setTlsVersion = tls.VersionTLS12
+		} else if tlsVersion == "1.3" {
+			fmt.Println("Using TLS version 1.3")
+			setTlsVersion = tls.VersionTLS13
+		} else {
+			log.Fatal("Invalid TLS version, please choose from: 1.0, 1.1, 1.2, 1.3")
+		}
 
 		tlsConfig := &tls.Config{
 			CipherSuites: []uint16{
 				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 			},
-			MinVersion:               tls.VersionTLS12,
+			MinVersion:               setTlsVersion,
 			PreferServerCipherSuites: true,
 		}
 
@@ -130,7 +151,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 		err = server.ListenAndServeTLS(cert, key)
 		// err = http.ListenAndServeTLS(location, cert, key, nil)
-	} else {
+	} else { // Normal HTTP Server
 		err = http.ListenAndServe(location, nil)
 	}
 
