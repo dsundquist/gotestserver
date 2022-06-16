@@ -2,7 +2,7 @@
 
 This tool was designed for troubleshooting requests when behind a reverse proxy, primarily Cloudflare.  It is a personal project that I use as a Technical Support Engineer. It can also be placed behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/) and [cloudflared Tunnels](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/) for troubleshooting. 
 
-**There are two certs that are included as examples, please replace these in production**
+**There are 4 certs that are included as examples, please delete these if you're running this in production**
 
 ## Install 
 
