@@ -112,16 +112,24 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 	} else if https {
 
-		tls.Listen("tcp", location, &tls.Config{
+		tlsConfig := &tls.Config{
 			CipherSuites: []uint16{
 				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 			},
 			MinVersion:               tls.VersionTLS12,
 			PreferServerCipherSuites: true,
-		})
+		}
 
-		err = http.ListenAndServeTLS(location, cert, key, nil)
+		tls.Listen("tcp", location, tlsConfig)
+
+		server := &http.Server{
+			Addr:      location,
+			TLSConfig: tlsConfig,
+		}
+
+		err = server.ListenAndServeTLS(cert, key)
+		// err = http.ListenAndServeTLS(location, cert, key, nil)
 	} else {
 		err = http.ListenAndServe(location, nil)
 	}
