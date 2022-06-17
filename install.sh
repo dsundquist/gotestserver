@@ -7,5 +7,6 @@ cp index.html ~/go/bin;
 # mkdir -p ~/go/bin/public
 # cp ./public/index.html ~/go/bin/public
 # go install .;
-
+# Generate SSH Cert
+# Generate mTLS Cert 
 
