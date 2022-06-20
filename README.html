@@ -2,7 +2,7 @@
     <html>
     <head>
         <meta charset="UTF-8">
-        <title>Go httperrors</title>
+        <title>GoTestServer</title>
         <style>
 /* From extension vscode.github */
 /*---------------------------------------------------------------------------------------------
@@ -80,40 +80,41 @@
         
     </head>
     <body class="vscode-body vscode-light">
-        <h1 id="go-httperrors">Go httperrors</h1>
+        <h1 id="gotestserver">GoTestServer</h1>
 <p>This tool was designed for troubleshooting requests when behind a reverse proxy, primarily Cloudflare.  It is a personal project that I use as a Technical Support Engineer. It can also be placed behind <a href="https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/">Cloudflare Access</a> and <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/">cloudflared Tunnels</a> for troubleshooting.</p>
+<h3 id="there-are-4-certs-that-are-included-as-examples-please-delete-these-if-youre-running-this-in-production">There are 4 certs that are included as examples, please delete these if you're running this in production</h3>
 <h2 id="install">Install</h2>
-<pre><code><code><div>go install github.com/dsundquist/httperrors@latest
+<p>Install Go: <a href="https://go.dev/doc/install">Go - Download and install</a></p>
+<pre><code><code><div>go install github.com/dsundquist/gotestserver@latest
 </div></code></code></pre>
 <h2 id="usage">Usage</h2>
 <p>To run the basic webserver (assuming that you haven't yet added <code>~/go/bin</code> directory to your path, and that you'll be using the default port 80 which will require sudo):</p>
-<pre><code><code><div>sudo ~/go/bin/httperrors serve
+<pre><code><code><div>sudo ~/go/bin/gotestserver serve
 </div></code></code></pre>
 <p>If you wish to not use the default port of 80, you can start the http server on alternate port using the -p flag.</p>
-<pre><code><code><div>~/go/bin/httperrors serve -p 8080
+<pre><code><code><div>~/go/bin/gotestserver serve -p 8080
 </div></code></code></pre>
-<p>If you want to run an https server you'll need a self signed certificate.  You can run the following 2x commands:</p>
+<p>If you want to run an https server you can use the defaults that are included in the repo.  You should replace these with the following:</p>
 <pre><code><code><div>openssl req  -new  -newkey rsa:2048  -nodes  -keyout server.key  -out server.csr
 openssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server.crt
 </div></code></code></pre>
-<p>The 2x files <code>server.crt</code> and <code>server.key</code> should be in the same directory has <code>./httperrors</code>:</p>
+<p>The 2x files <code>server.crt</code> and <code>server.key</code> should be in the same directory has <code>./gotestserver</code>:</p>
 <pre><code><code><div>* local_directory: 
-   |-&gt; httperrors
+   |-&gt; gotestserver
    |
    |-&gt; server.crt 
    |-&gt; server.key 
 </div></code></code></pre>
 <p>Then one can run the serve command with a -s flag:</p>
-<pre><code><code><div>sudo ~/go/bin/httperrors serve -s
+<pre><code><code><div>sudo ~/go/bin/gotestserver serve -s
 </div></code></code></pre>
 <p>The CLI is built from <a href="https://github.com/spf13/cobra">Cobra</a>, to see additional usage use the --help flag:</p>
-<pre><code><code><div>./httperrors serve --help
+<pre><code><code><div>./gotestserver serve --help
 </div></code></code></pre>
 <h2 id="http-server-behavior">HTTP Server Behavior</h2>
-<p>The main page will just return back the request headers that the server had received.  This can be useful for analysis when behind a reverse proxy or a product like <a href="https://github.com/cloudflare/cloudflared">Cloudflared</a></p>
-<p>To use generate 5xx errors, for troubleshooting behind Cloudflare, visit:</p>
-<pre><code><code><div>http://localhost/help
-</div></code></code></pre>
+<p>The main page will serve <code>./index.html</code>.</p>
+<p>Any pages that are not found, (besides the <code>/public</code> directory, which acts as a normal webserver) will return the request headers.</p>
+<p>This can be useful for analysis when behind a reverse proxy or a product like <a href="https://github.com/cloudflare/cloudflared">Cloudflared</a></p>
 <h2 id="the-522-error-page">The 522 Error Page</h2>
 <p>A 522 error is defined here: <a href="https://support.cloudflare.com/hc/en-us/articles/115003011431-Troubleshooting-Cloudflare-5XX-errors#522error">Cloudflare Support - 522 Error</a></p>
 <p>The error occurs at the network level when:</p>
@@ -136,13 +137,19 @@ openssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server
 <p>Add more to the client side, this is still up in the air what will happen here.</p>
 </li>
 <li>
+<p>Workers for some routes, worker serve the index.html??</p>
+</li>
+<li>
 <p>Read from a config.yaml file <a href="https://github.com/spf13/viper">SPF13 - Viper</a></p>
 </li>
 <li>
-<p>Write debugging to a file</p>
+<p>Write debugging to a file, <a href="https://stackoverflow.com/questions/19965795/how-to-write-log-to-file">https://stackoverflow.com/questions/19965795/how-to-write-log-to-file</a></p>
 </li>
 <li>
-<p>We should rename this</p>
+<p>Can we force to an http version? ie. http1.0, http1.1, http2, <a href="https://stackoverflow.com/questions/53367809/how-to-force-client-to-use-http-2-instead-of-falling-back-to-http-1-1">https://stackoverflow.com/questions/53367809/how-to-force-client-to-use-http-2-instead-of-falling-back-to-http-1-1</a></p>
+</li>
+<li>
+<p>Implement QUIC,  <a href="https://pkg.go.dev/github.com/lucas-clemente/quic-go/http3">https://pkg.go.dev/github.com/lucas-clemente/quic-go/http3</a></p>
 </li>
 <li>
 <p>Document:</p>
@@ -152,7 +159,6 @@ openssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server
 <li>The public folder</li>
 <li>debugging</li>
 <li>Client and its uselessness</li>
-<li>Response, ie. <code>localhost/response?header1=value1&amp;header2=value2</code></li>
 </ul>
 </li>
 </ul>

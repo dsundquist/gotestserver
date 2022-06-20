@@ -10,7 +10,7 @@ Install Go: [Go - Download and install](https://go.dev/doc/install)
 
 ```
 go install github.com/dsundquist/gotestserver@latest
-```
+``` 
 
 ## Usage 
 
@@ -87,7 +87,6 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 
 ## Todo
 
-* Generate certs from instal.sh
 * Add more to the client side, this is still up in the air what will happen here. 
 * Workers for some routes, worker serve the index.html?? 
 * Read from a config.yaml file [SPF13 - Viper](https://github.com/spf13/viper)
@@ -101,5 +100,4 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
   * The public folder
   * debugging
   * Client and its uselessness 
-  * Response, ie `localhost/response?header1=value1&header2=value2`
   
