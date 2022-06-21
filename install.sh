@@ -1,17 +1,17 @@
 #! /bin/bash
 
 echo "Installing...";
-# Check if go is installed? 
-# mkdir -p ~/go/bin
+# Check if go is installed?
+command -v foo >/dev/null 2>&1 || { echo >&2 "Please install go first: https://go.dev/dl/"; exit 1; } 
+mkdir -p ~/go/bin
 cp index.html ~/go/bin;
-# mkdir -p ~/go/bin/public
-# cp ./public/index.html ~/go/bin/public
-# go install .;
+mkdir -p ~/go/bin/public
+cp ./public/index.html ~/go/bin/public
+go install .;
 # Generate SSH Cert
-#openssl req  -new  -newkey rsa:2048  -nodes  -keyout server.key  -out server.csr
-#openssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server.crt
+openssl req  -new  -newkey rsa:2048  -nodes  -keyout ~/go/bin/server.key  -out ~/go/bin/server.csr
+openssl  x509  -req  -days 365  -in ~/go/bin/server.csr  -signkey ~/go/bin/server.key  -out ~/go/bin/server.crt
 # Generate mTLS Cert 
-#openssl req  -new  -newkey rsa:2048  -nodes  -keyout client.key  -out client.csr
-#openssl  x509  -req  -days 365  -in server.csr  -signkey client.key  -out client.crt
-# Cleanup Certs
-# rm -f server.key server.cert server.csr client.key client.crt client.csr 
+openssl req  -new  -newkey rsa:2048  -nodes  -keyout ~/go/bin/client.key  -out ~/go/bin/client.csr
+openssl  x509  -req  -days 365  -in ~/go/bin/server.csr  -signkey ~/go/bin/client.key  -out ~/go/bin/client.crt
+
