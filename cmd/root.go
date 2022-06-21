@@ -52,6 +52,7 @@ func init() {
 	serveCmd.Flags().BoolP("secure", "s", false, "Run a HTTPS server. Requires: ./server.crt and ./server.key")
 	serveCmd.Flags().StringP("tls", "t", "1.0", "Choose the Minimum TLS Version, available options: 1.0, 1.1, 1.2, 1.3")
 	serveCmd.Flags().StringP("ciphers", "c", "nil", "Choose the available ciphers that can be used")
+	serveCmd.Flags().BoolP("http1", "1", false, "Disable HTTP2")
 
 	clientCmd.Flags().BoolP("insecure", "k", false, "Ingore Self Signed or bad certificates.")
 	clientCmd.Flags().StringP("location", "l", "http://localhost:80", "The address or IP address that we're connecting to.")

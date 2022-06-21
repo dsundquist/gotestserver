@@ -37,6 +37,7 @@ var serveCmd = &cobra.Command{
 		debug, _ = cmd.Flags().GetBool("debug")
 		tlsVersion, _ := cmd.Flags().GetString("tls")
 		ciphers, _ := cmd.Flags().GetString("ciphers")
+		http1, _ := cmd.Flags().GetBool("http1")
 
 		if https || mtls {
 			if port == 80 {
@@ -48,7 +49,7 @@ var serveCmd = &cobra.Command{
 			fmt.Printf("Starting HTTP Server on port: %v\n", port)
 		}
 		// fmt.Printf("Port: %v, https: %v, mtls: %v, cert: %v, key: %v, clientCert: %v\n", port, https, mtls, cert, key, clientCert)
-		serve(port, https, mtls, cert, key, clientCert, tlsVersion, ciphers)
+		serve(port, https, mtls, cert, key, clientCert, tlsVersion, ciphers, http1)
 	},
 }
 
@@ -56,7 +57,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
-func serve(port int, https bool, mtls bool, cert string, key string, clientCert string, tlsVersion string, ciphers string) {
+func serve(port int, https bool, mtls bool, cert string, key string, clientCert string, tlsVersion string, ciphers string, http1 bool) {
 	var err error
 
 	http.HandleFunc("/", Request) // Default prints request headers
@@ -108,6 +109,10 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 		server := &http.Server{
 			Addr:      location,
 			TLSConfig: tlsConfig,
+		}
+
+		if http1 {
+			server.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler))
 		}
 
 		err = server.ListenAndServeTLS(cert, key)
@@ -217,6 +222,10 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 		server := &http.Server{
 			Addr:      location,
 			TLSConfig: tlsConfig,
+		}
+
+		if http1 {
+			server.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler))
 		}
 
 		err = server.ListenAndServeTLS(cert, key)

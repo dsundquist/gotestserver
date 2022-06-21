@@ -91,11 +91,11 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 * Workers for some routes, worker serve the index.html?? 
 * Read from a config.yaml file [SPF13 - Viper](https://github.com/spf13/viper)
 * Write debugging to a file, https://stackoverflow.com/questions/19965795/how-to-write-log-to-file
-* Can we force to an http version? ie. http1.0, http1.1, http2, https://stackoverflow.com/questions/53367809/how-to-force-client-to-use-http-2-instead-of-falling-back-to-http-1-1
 * Implement QUIC,  https://pkg.go.dev/github.com/lucas-clemente/quic-go/http3
 
 * Document: 
   * mTLS
+  * http1.1
   * Necessary file structure for all functions to work  
   * The public folder
   * debugging
