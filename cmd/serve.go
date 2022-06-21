@@ -38,6 +38,7 @@ var serveCmd = &cobra.Command{
 		tlsVersion, _ := cmd.Flags().GetString("tls")
 		ciphers, _ := cmd.Flags().GetString("ciphers")
 		http1, _ := cmd.Flags().GetBool("http1")
+		logfileloc, _ := cmd.Flags().GetString("logfile")
 
 		if https || mtls {
 			if port == 80 {
@@ -49,6 +50,20 @@ var serveCmd = &cobra.Command{
 			fmt.Printf("Starting HTTP Server on port: %v\n", port)
 		}
 		// fmt.Printf("Port: %v, https: %v, mtls: %v, cert: %v, key: %v, clientCert: %v\n", port, https, mtls, cert, key, clientCert)
+
+		// Are we logging to a file?
+		if logfileloc != "nil" {
+			fmt.Printf("Found log file option for location: %v \n", logfileloc)
+			logfile, err := os.OpenFile(logfileloc, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
+			if err != nil {
+				log.Panic(err)
+			}
+			defer logfile.Close()
+
+			// Set log out put and enjoy :)
+			log.SetOutput(logfile)
+		}
+
 		serve(port, https, mtls, cert, key, clientCert, tlsVersion, ciphers, http1)
 	},
 }
