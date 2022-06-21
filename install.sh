@@ -2,7 +2,7 @@
 
 echo "Installing...";
 # Check if go is installed?
-command -v foo >/dev/null 2>&1 || { echo >&2 "Please install go first: https://go.dev/dl/"; exit 1; } 
+command -v go >/dev/null 2>&1 || { echo >&2 "Please install go first: https://go.dev/dl/"; exit 1; } 
 mkdir -p ~/go/bin
 cp index.html ~/go/bin;
 mkdir -p ~/go/bin/public
