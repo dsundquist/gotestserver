@@ -347,11 +347,42 @@ func Request(w http.ResponseWriter, req *http.Request) {
 	response += "Hello from a very basic Go HTTPS server implementation! ;)\n\n"
 	response += fmt.Sprintf("Remote Address: %v\n\n", req.RemoteAddr)
 	response += fmt.Sprintf("Host: %v \n", req.Host)
+	response += "Requested Resource: " + req.RequestURI + "\n"
+	response += "Method: " + req.Method + "\n"
+	response += "Protocol: " + req.Proto + "\n"
+	response += "Content-Length: " + fmt.Sprint(req.ContentLength) + "\n\n"
 
+	// TLS Information
+	if req.TLS != nil {
+		response += "TLS SNI: " + req.TLS.ServerName + "\n"
+		response += "TLS Version: "
+		if req.TLS.Version == 769 {
+			response += "1.0 \n"
+		} else if req.TLS.Version == 770 {
+			response += "1.1 \n"
+		} else if req.TLS.Version == 771 {
+			response += "1.2 \n"
+		} else if req.TLS.Version == 772 {
+			response += "1.3 \n"
+		} else {
+			response += fmt.Sprint(req.TLS.Version) + "\n"
+		}
+
+		response += "TLS Cipher Suite: "
+
+		for available, value := range availableCiphers {
+			if req.TLS.CipherSuite == value {
+				response += available + "\n"
+			}
+		}
+		response += "TLS Negotiated Proto: " + req.TLS.NegotiatedProtocol + "\n\n"
+	}
+
+	response += "Headers: \n"
 	for name, values := range req.Header {
 		// Loop over all values for the name.
 		for _, value := range values {
-			response += fmt.Sprintf("Header: %v Value: %v \n", name, value)
+			response += fmt.Sprintf("[%v:%v] \n", name, value)
 		}
 	}
 
