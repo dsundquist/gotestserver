@@ -22,6 +22,34 @@ import (
 
 var debug bool = false
 
+var availableCiphers = map[string]uint16{
+	"TLS_RSA_WITH_RC4_128_SHA":                      0x0005,
+	"TLS_RSA_WITH_3DES_EDE_CBC_SHA":                 0x000a,
+	"TLS_RSA_WITH_AES_128_CBC_SHA":                  0x002f,
+	"TLS_RSA_WITH_AES_256_CBC_SHA":                  0x0035,
+	"TLS_RSA_WITH_AES_128_CBC_SHA256":               0x003c,
+	"TLS_RSA_WITH_AES_128_GCM_SHA256":               0x009c,
+	"TLS_RSA_WITH_AES_256_GCM_SHA384":               0x009d,
+	"TLS_ECDHE_ECDSA_WITH_RC4_128_SHA":              0xc007,
+	"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA":          0xc009,
+	"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA":          0xc00a,
+	"TLS_ECDHE_RSA_WITH_RC4_128_SHA":                0xc011,
+	"TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA":           0xc012,
+	"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA":            0xc013,
+	"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA":            0xc014,
+	"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256":       0xc023,
+	"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256":         0xc027,
+	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256":         0xc02f,
+	"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256":       0xc02b,
+	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384":         0xc030,
+	"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384":       0xc02c,
+	"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256":   0xcca8,
+	"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256": 0xcca9,
+	"TLS_AES_128_GCM_SHA256":                        0x1301,
+	"TLS_AES_256_GCM_SHA384":                        0x1302,
+	"TLS_CHACHA20_POLY1305_SHA256":                  0x1303,
+}
+
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
@@ -156,34 +184,6 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 		cipherSlice := strings.Split(ciphers, ",")
 
-		availableCiphers := map[string]uint16{
-			"TLS_RSA_WITH_RC4_128_SHA":                      0x0005,
-			"TLS_RSA_WITH_3DES_EDE_CBC_SHA":                 0x000a,
-			"TLS_RSA_WITH_AES_128_CBC_SHA":                  0x002f,
-			"TLS_RSA_WITH_AES_256_CBC_SHA":                  0x0035,
-			"TLS_RSA_WITH_AES_128_CBC_SHA256":               0x003c,
-			"TLS_RSA_WITH_AES_128_GCM_SHA256":               0x009c,
-			"TLS_RSA_WITH_AES_256_GCM_SHA384":               0x009d,
-			"TLS_ECDHE_ECDSA_WITH_RC4_128_SHA":              0xc007,
-			"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA":          0xc009,
-			"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA":          0xc00a,
-			"TLS_ECDHE_RSA_WITH_RC4_128_SHA":                0xc011,
-			"TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA":           0xc012,
-			"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA":            0xc013,
-			"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA":            0xc014,
-			"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256":       0xc023,
-			"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256":         0xc027,
-			"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256":         0xc02f,
-			"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256":       0xc02b,
-			"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384":         0xc030,
-			"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384":       0xc02c,
-			"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256":   0xcca8,
-			"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256": 0xcca9,
-			"TLS_AES_128_GCM_SHA256":                        0x1301,
-			"TLS_AES_256_GCM_SHA384":                        0x1302,
-			"TLS_CHACHA20_POLY1305_SHA256":                  0x1303,
-		}
-
 		for _, cipher := range cipherSlice {
 			for available, value := range availableCiphers {
 				if cipher == available {
@@ -270,9 +270,36 @@ func Printlog(req *http.Request) {
 		// Top level information
 		output += "Debug Enabled, dropping entire request: \n\n"
 		output += "Remote Addr: " + req.RemoteAddr + "\n"
-		output += "Method: " + req.Method + "\n"
 		output += "Requested Resource: " + req.RequestURI + "\n"
+		output += "Method: " + req.Method + "\n"
 		output += "Protocol: " + req.Proto + "\n"
+		output += "Content-Length: " + fmt.Sprint(req.ContentLength) + "\n"
+
+		// TLS Information
+		if req.TLS != nil {
+			output += "TLS SNI: " + req.TLS.ServerName + "\n"
+			output += "TLS Version: "
+			if req.TLS.Version == 769 {
+				output += "1.0 \n"
+			} else if req.TLS.Version == 770 {
+				output += "1.1 \n"
+			} else if req.TLS.Version == 771 {
+				output += "1.2 \n"
+			} else if req.TLS.Version == 772 {
+				output += "1.3 \n"
+			} else {
+				output += fmt.Sprint(req.TLS.Version) + "\n"
+			}
+
+			output += "TLS Cipher Suite: "
+
+			for available, value := range availableCiphers {
+				if req.TLS.CipherSuite == value {
+					output += available + "\n"
+				}
+			}
+			output += "TLS Negotiated Proto: " + req.TLS.NegotiatedProtocol + "\n"
+		}
 
 		// Print the headers, can this look better?
 		output += "Headers: \n"
