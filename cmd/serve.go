@@ -412,12 +412,32 @@ func Cookie(w http.ResponseWriter, req *http.Request) {
 
 	// Set the expiration date one year in the future, create a cooke and set it.
 	// https://go.dev/src/net/http/cookie.go
-	expiration := time.Now().Add(365 * 24 * time.Hour)
-	cookie := http.Cookie{} //{Name: "my_custom_cookie",Value:"abcd",Expires:expiration}
-	cookie.Name = "my_custom_cookie"
-	cookie.Value = "abcd"
-	cookie.Expires = expiration
-	http.SetCookie(w, &cookie)
+	queries := req.URL.Query()
+
+	var cookies []http.Cookie
+
+	if len(queries) != 0 {
+
+		for k, values := range queries {
+			for _, v := range values {
+				expiration := time.Now().Add(365 * 24 * time.Hour)
+				cookie := http.Cookie{} //{Name: "my_custom_cookie",Value:"abcd",Expires:expiration}
+				cookie.Name = k
+				cookie.Value = v
+				cookie.Expires = expiration
+				cookies = append(cookies, cookie)
+				http.SetCookie(w, &cookie)
+			}
+		}
+	} else {
+		expiration := time.Now().Add(365 * 24 * time.Hour)
+		cookie := http.Cookie{} //{Name: "my_custom_cookie",Value:"abcd",Expires:expiration}
+		cookie.Name = "my_custom_cookie"
+		cookie.Value = "abcd"
+		cookie.Expires = expiration
+		http.SetCookie(w, &cookie)
+		cookies = append(cookies, cookie)
+	}
 
 	// Redirect w/ cookie, uncomment the next line if you want to redirect, but you'll need to remove the response
 	// Or the Redirect will not happen
@@ -436,7 +456,10 @@ func Cookie(w http.ResponseWriter, req *http.Request) {
 	response += "\tcookie.HttpOnly: %v\n"
 	response += "\tcookie.SameSite: %v\n"
 
-	fmt.Fprintf(w, response, cookie.Name, cookie.Value, cookie.Path, cookie.Domain, cookie.Expires, cookie.MaxAge, cookie.Secure, cookie.HttpOnly, cookie.SameSite)
+	for _, cookie := range cookies {
+		fmt.Fprintf(w, response, cookie.Name, cookie.Value, cookie.Path, cookie.Domain, cookie.Expires, cookie.MaxAge, cookie.Secure, cookie.HttpOnly, cookie.SameSite)
+	}
+
 }
 
 func Readme(w http.ResponseWriter, req *http.Request) {

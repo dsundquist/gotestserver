@@ -143,18 +143,14 @@ openssl  x509  -req  -days 365  -in server.csr  -signkey server.key  -out server
 <p>Read from a config.yaml file <a href="https://github.com/spf13/viper">SPF13 - Viper</a></p>
 </li>
 <li>
-<p>Write debugging to a file, <a href="https://stackoverflow.com/questions/19965795/how-to-write-log-to-file">https://stackoverflow.com/questions/19965795/how-to-write-log-to-file</a></p>
-</li>
-<li>
-<p>Can we force to an http version? ie. http1.0, http1.1, http2, <a href="https://stackoverflow.com/questions/53367809/how-to-force-client-to-use-http-2-instead-of-falling-back-to-http-1-1">https://stackoverflow.com/questions/53367809/how-to-force-client-to-use-http-2-instead-of-falling-back-to-http-1-1</a></p>
-</li>
-<li>
-<p>Implement QUIC,  <a href="https://pkg.go.dev/github.com/lucas-clemente/quic-go/http3">https://pkg.go.dev/github.com/lucas-clemente/quic-go/http3</a></p>
+<p>Implement QUIC,  <a href="https://pkg.go.dev/github.com/lucas-clemente/quic-go/http3">https://pkg.go.dev/github.com/lucas-clemente/quic-go/http3</a> &lt;- seems bit overly complicated</p>
 </li>
 <li>
 <p>Document:</p>
 <ul>
+<li>logging to a file s</li>
 <li>mTLS</li>
+<li>http1.1</li>
 <li>Necessary file structure for all functions to work</li>
 <li>The public folder</li>
 <li>debugging</li>
