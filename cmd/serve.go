@@ -22,6 +22,8 @@ import (
 
 var debug bool = false
 
+var location string
+
 var availableCiphers = map[string]uint16{
 	"TLS_RSA_WITH_RC4_128_SHA":                      0x0005,
 	"TLS_RSA_WITH_3DES_EDE_CBC_SHA":                 0x000a,
@@ -119,7 +121,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	http.HandleFunc("/520", Fivetwenty)
 	http.HandleFunc("/524", Fivetwentyfour)
 
-	location := ":" + strconv.Itoa(port)
+	location = ":" + strconv.Itoa(port)
 
 	if mtls {
 
@@ -277,6 +279,7 @@ func Printlog(req *http.Request) {
 
 		// TLS Information
 		if req.TLS != nil {
+			output += "Local Port: " + location + "\n"
 			output += "TLS SNI: " + req.TLS.ServerName + "\n"
 			output += "TLS Version: "
 			if req.TLS.Version == 769 {
@@ -347,6 +350,7 @@ func Request(w http.ResponseWriter, req *http.Request) {
 	response += "Hello from a very basic Go HTTPS server implementation! ;)\n\n"
 	response += fmt.Sprintf("Remote Address: %v\n\n", req.RemoteAddr)
 	response += fmt.Sprintf("Host: %v \n", req.Host)
+
 	response += "Requested Resource: " + req.RequestURI + "\n"
 	response += "Method: " + req.Method + "\n"
 	response += "Protocol: " + req.Proto + "\n"
@@ -355,6 +359,7 @@ func Request(w http.ResponseWriter, req *http.Request) {
 	// TLS Information
 	if req.TLS != nil {
 		response += "TLS SNI: " + req.TLS.ServerName + "\n"
+		response += "Local Port: " + location + "\n"
 		response += "TLS Version: "
 		if req.TLS.Version == 769 {
 			response += "1.0 \n"
