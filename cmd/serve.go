@@ -65,7 +65,8 @@ var serveCmd = &cobra.Command{
 		key, _ := cmd.Flags().GetString("key")
 		clientCert, _ := cmd.Flags().GetString("clientcert")
 		debug, _ = cmd.Flags().GetBool("debug")
-		tlsVersion, _ := cmd.Flags().GetString("tls")
+		tlsMinVersion, _ := cmd.Flags().GetString("tlsMin")
+		tlsMaxVersion, _ := cmd.Flags().GetString("tlsMax")
 		ciphers, _ := cmd.Flags().GetString("ciphers")
 		http1, _ := cmd.Flags().GetBool("http1")
 		logfileloc, _ := cmd.Flags().GetString("logfile")
@@ -94,7 +95,7 @@ var serveCmd = &cobra.Command{
 			log.SetOutput(logfile)
 		}
 
-		serve(port, https, mtls, cert, key, clientCert, tlsVersion, ciphers, http1)
+		serve(port, https, mtls, cert, key, clientCert, tlsMinVersion, tlsMaxVersion, ciphers, http1)
 	},
 }
 
@@ -102,7 +103,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
-func serve(port int, https bool, mtls bool, cert string, key string, clientCert string, tlsVersion string, ciphers string, http1 bool) {
+func serve(port int, https bool, mtls bool, cert string, key string, clientCert string, tlsMinVersion string, tlsMaxVersion string, ciphers string, http1 bool) {
 	var err error
 
 	http.HandleFunc("/", Request) // Default prints request headers
@@ -164,22 +165,40 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 	} else if https { // The HTTPS Server
 
-		var setTlsVersion uint16 = tls.VersionTLS10 // default would be 1.0
+		var setTlsMinVersion uint16 = tls.VersionTLS10 // default would be 1.0
 
-		if tlsVersion == "1.0" {
+		if tlsMinVersion == "1.0" {
 			fmt.Println("Using Minimum TLS version 1.0")
-			setTlsVersion = tls.VersionTLS10
-		} else if tlsVersion == "1.1" {
+			setTlsMinVersion = tls.VersionTLS10
+		} else if tlsMinVersion == "1.1" {
 			fmt.Println("Using Minimum TLS version 1.1")
-			setTlsVersion = tls.VersionTLS11
-		} else if tlsVersion == "1.2" {
+			setTlsMinVersion = tls.VersionTLS11
+		} else if tlsMinVersion == "1.2" {
 			fmt.Println("Using Minimum TLS version 1.2")
-			setTlsVersion = tls.VersionTLS12
-		} else if tlsVersion == "1.3" {
+			setTlsMinVersion = tls.VersionTLS12
+		} else if tlsMinVersion == "1.3" {
 			fmt.Println("Using Minimum TLS version 1.3")
-			setTlsVersion = tls.VersionTLS13
+			setTlsMinVersion = tls.VersionTLS13
 		} else {
 			log.Fatal("Invalid Minimum TLS version, please choose from: 1.0, 1.1, 1.2, 1.3")
+		}
+
+		var setTlsMaxVersion uint16 = tls.VersionTLS13 // default would be 1.3
+
+		if tlsMaxVersion == "1.0" {
+			fmt.Println("Using Maximum TLS version 1.0")
+			setTlsMaxVersion = tls.VersionTLS10
+		} else if tlsMaxVersion == "1.1" {
+			fmt.Println("Using Maximum TLS version 1.1")
+			setTlsMaxVersion = tls.VersionTLS11
+		} else if tlsMaxVersion == "1.2" {
+			fmt.Println("Using Maximum TLS version 1.2")
+			setTlsMaxVersion = tls.VersionTLS12
+		} else if tlsMaxVersion == "1.3" {
+			fmt.Println("Using Maximum TLS version 1.3")
+			setTlsMaxVersion = tls.VersionTLS13
+		} else {
+			log.Fatal("Invalid Maximum TLS version, please choose from: 1.0, 1.1, 1.2, 1.3")
 		}
 
 		var tlsCiphers []uint16
@@ -230,7 +249,8 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 		tlsConfig := &tls.Config{
 			CipherSuites:             tlsCiphers,
-			MinVersion:               setTlsVersion,
+			MinVersion:               setTlsMinVersion,
+			MaxVersion:               setTlsMaxVersion,
 			PreferServerCipherSuites: true,
 		}
 
