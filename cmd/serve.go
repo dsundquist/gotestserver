@@ -69,7 +69,6 @@ var serveCmd = &cobra.Command{
 			fmt.Printf("Starting HTTP Server on port: %v\n", port)
 		}
 		// fmt.Printf("Port: %v, https: %v, mtls: %v, cert: %v, key: %v, clientCert: %v\n", port, https, mtls, cert, key, clientCert)
-
 		// Are we logging to a file?
 		if logfileloc != "nil" {
 			fmt.Printf("Found log file option for location: %v \n", logfileloc)
@@ -277,16 +276,10 @@ func Printlog(req *http.Request) {
 			output += "Local Port: " + location + "\n"
 			output += "TLS SNI: " + req.TLS.ServerName + "\n"
 			output += "TLS Version: "
-			if req.TLS.Version == 769 {
-				output += "1.0 \n"
-			} else if req.TLS.Version == 770 {
-				output += "1.1 \n"
-			} else if req.TLS.Version == 771 {
-				output += "1.2 \n"
-			} else if req.TLS.Version == 772 {
-				output += "1.3 \n"
-			} else {
-				output += fmt.Sprint(req.TLS.Version) + "\n"
+			for k, v := range tlsVersionsItoa {
+				if req.TLS.Version == k {
+					output += v + " \n"
+				}
 			}
 
 			output += "TLS Cipher Suite: "
@@ -348,7 +341,7 @@ func Request(w http.ResponseWriter, req *http.Request) {
 
 	var response string
 
-	response += "Hello from a very basic Go HTTPS server implementation! ;)\n\n"
+	response += "Hello from a very basic Go HTTP(S) server implementation! ;)\n\n"
 	response += fmt.Sprintf("Remote Address: %v\n\n", req.RemoteAddr)
 	response += fmt.Sprintf("Host: %v \n", req.Host)
 
@@ -374,7 +367,7 @@ func Request(w http.ResponseWriter, req *http.Request) {
 			response += fmt.Sprint(req.TLS.Version) + "\n"
 		}
 
-		response += fmt.Sprintf("TLS Cipher Suite: %v ", req.TLS.CipherSuite)
+		response += fmt.Sprint("TLS Cipher Suite: ")
 
 		for _, cipher := range tls.CipherSuites() {
 			if req.TLS.CipherSuite == cipher.ID {
