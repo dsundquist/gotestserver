@@ -24,32 +24,20 @@ var debug bool = false
 
 var location string
 
-var availableCiphers = map[string]uint16{
-	"TLS_RSA_WITH_RC4_128_SHA":                      0x0005,
-	"TLS_RSA_WITH_3DES_EDE_CBC_SHA":                 0x000a,
-	"TLS_RSA_WITH_AES_128_CBC_SHA":                  0x002f,
-	"TLS_RSA_WITH_AES_256_CBC_SHA":                  0x0035,
-	"TLS_RSA_WITH_AES_128_CBC_SHA256":               0x003c,
-	"TLS_RSA_WITH_AES_128_GCM_SHA256":               0x009c,
-	"TLS_RSA_WITH_AES_256_GCM_SHA384":               0x009d,
-	"TLS_ECDHE_ECDSA_WITH_RC4_128_SHA":              0xc007,
-	"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA":          0xc009,
-	"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA":          0xc00a,
-	"TLS_ECDHE_RSA_WITH_RC4_128_SHA":                0xc011,
-	"TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA":           0xc012,
-	"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA":            0xc013,
-	"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA":            0xc014,
-	"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256":       0xc023,
-	"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256":         0xc027,
-	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256":         0xc02f,
-	"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256":       0xc02b,
-	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384":         0xc030,
-	"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384":       0xc02c,
-	"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256":   0xcca8,
-	"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256": 0xcca9,
-	"TLS_AES_128_GCM_SHA256":                        0x1301,
-	"TLS_AES_256_GCM_SHA384":                        0x1302,
-	"TLS_CHACHA20_POLY1305_SHA256":                  0x1303,
+// A Mapping or collection of the TLS versions doesn't exist in crypto/tls
+// https://pkg.go.dev/crypto/tls
+var tlsVersionsItoa = map[uint16]string{
+	0x0301: "1.0",
+	0x0302: "1.1",
+	0x0303: "1.2",
+	0x0304: "1.3",
+}
+
+var tlsVersionsAtoi = map[string]uint16{
+	"1.0": 0x0301,
+	"1.1": 0x0302,
+	"1.2": 0x0303,
+	"1.3": 0x0304,
 }
 
 // serveCmd represents the serve command
@@ -166,39 +154,23 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	} else if https { // The HTTPS Server
 
 		var setTlsMinVersion uint16 = tls.VersionTLS10 // default would be 1.0
-
-		if tlsMinVersion == "1.0" {
-			fmt.Println("Using Minimum TLS version 1.0")
-			setTlsMinVersion = tls.VersionTLS10
-		} else if tlsMinVersion == "1.1" {
-			fmt.Println("Using Minimum TLS version 1.1")
-			setTlsMinVersion = tls.VersionTLS11
-		} else if tlsMinVersion == "1.2" {
-			fmt.Println("Using Minimum TLS version 1.2")
-			setTlsMinVersion = tls.VersionTLS12
-		} else if tlsMinVersion == "1.3" {
-			fmt.Println("Using Minimum TLS version 1.3")
-			setTlsMinVersion = tls.VersionTLS13
-		} else {
-			log.Fatal("Invalid Minimum TLS version, please choose from: 1.0, 1.1, 1.2, 1.3")
+		for k, v := range tlsVersionsAtoi {
+			if k == tlsMinVersion {
+				setTlsMinVersion = v
+			}
 		}
+		fmt.Printf("Using Minimum TLS version %v\n", tlsVersionsItoa[setTlsMinVersion])
 
 		var setTlsMaxVersion uint16 = tls.VersionTLS13 // default would be 1.3
+		for k, v := range tlsVersionsAtoi {
+			if k == tlsMaxVersion {
+				setTlsMaxVersion = v
+			}
+		}
+		fmt.Printf("Using Maximum TLS version %v\n", tlsVersionsItoa[setTlsMaxVersion])
 
-		if tlsMaxVersion == "1.0" {
-			fmt.Println("Using Maximum TLS version 1.0")
-			setTlsMaxVersion = tls.VersionTLS10
-		} else if tlsMaxVersion == "1.1" {
-			fmt.Println("Using Maximum TLS version 1.1")
-			setTlsMaxVersion = tls.VersionTLS11
-		} else if tlsMaxVersion == "1.2" {
-			fmt.Println("Using Maximum TLS version 1.2")
-			setTlsMaxVersion = tls.VersionTLS12
-		} else if tlsMaxVersion == "1.3" {
-			fmt.Println("Using Maximum TLS version 1.3")
-			setTlsMaxVersion = tls.VersionTLS13
-		} else {
-			log.Fatal("Invalid Maximum TLS version, please choose from: 1.0, 1.1, 1.2, 1.3")
+		if !(tlsMaxVersion >= tlsMinVersion) {
+			log.Fatalf("The TLS maximum version: %v is not greater than the TLS minimum version: %v", tlsMaxVersion, tlsMinVersion)
 		}
 
 		var tlsCiphers []uint16
@@ -206,43 +178,46 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 		cipherSlice := strings.Split(ciphers, ",")
 
 		for _, cipher := range cipherSlice {
-			for available, value := range availableCiphers {
-				if cipher == available {
-					tlsCiphers = append(tlsCiphers, value)
+			for _, availableCipher := range tls.CipherSuites() {
+				if cipher == availableCipher.Name {
+					tlsCiphers = append(tlsCiphers, availableCipher.ID)
+				}
+			}
+			for _, availableCipher := range tls.InsecureCipherSuites() {
+				if cipher == availableCipher.Name {
+					tlsCiphers = append(tlsCiphers, availableCipher.ID)
 				}
 			}
 		}
 
-		if ciphers != "nil" && len(cipherSlice) > 0 {
-			log.Fatalf(`Failed to match: %v to the available ciphers:
-	// TLS 1.0 - 1.2 cipher suites.
-	TLS_RSA_WITH_RC4_128_SHA
-	TLS_RSA_WITH_3DES_EDE_CBC_SHA
-	TLS_RSA_WITH_AES_128_CBC_SHA
-	TLS_RSA_WITH_AES_256_CBC_SHA
-	TLS_RSA_WITH_AES_128_CBC_SHA256
-	TLS_RSA_WITH_AES_128_GCM_SHA256
-	TLS_RSA_WITH_AES_256_GCM_SHA384
-	TLS_ECDHE_ECDSA_WITH_RC4_128_SHA
-	TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
-	TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
-	TLS_ECDHE_RSA_WITH_RC4_128_SHA
-	TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
-	TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
-	TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
-	TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
-	TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-	TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-	TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-	TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
-	TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+		// Making this automatic, having strings was a bad original idea
+		if ciphers != "nil" && (len(tlsCiphers) != len(cipherSlice)) {
 
-	// TLS 1.3 cipher suites.
-	TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
-	TLS_AES_128_GCM_SHA256
-	TLS_AES_256_GCM_SHA384
-	TLS_CHACHA20_POLY1305_SHA256`, ciphers)
+			var errorMessage string
+
+			// Print Secure Cipher Suites
+			errorMessage += fmt.Sprintln("\nSecure Cipher Suites:")
+			for _, cipher := range tls.CipherSuites() {
+				errorMessage += fmt.Sprint("\t" + cipher.Name + ": ")
+				// Available for these TLS Versions
+				for _, j := range cipher.SupportedVersions {
+					errorMessage += fmt.Sprint(tlsVersionsItoa[j] + " ")
+				}
+				errorMessage += fmt.Sprintln()
+			}
+
+			// Print Insecure Cipher Suites
+			errorMessage += fmt.Sprintln("Insecure Cipher Suites:")
+			for _, cipher := range tls.InsecureCipherSuites() {
+				errorMessage += fmt.Sprint("\t" + cipher.Name + ": ")
+				// Available for these TLS Versions
+				for _, j := range cipher.SupportedVersions {
+					errorMessage += fmt.Sprint(tlsVersionsItoa[j] + " ")
+				}
+				errorMessage += fmt.Sprintln()
+			}
+
+			log.Fatalf(errorMessage + "\nSee https://pkg.go.dev/crypto/tls")
 		}
 
 		fmt.Printf("Using ciphers (all available if blank): %v\n", tlsCiphers)
@@ -316,9 +291,15 @@ func Printlog(req *http.Request) {
 
 			output += "TLS Cipher Suite: "
 
-			for available, value := range availableCiphers {
-				if req.TLS.CipherSuite == value {
-					output += available + "\n"
+			for _, cipher := range tls.CipherSuites() {
+				if req.TLS.CipherSuite == cipher.ID {
+					output += cipher.Name + "\n"
+				}
+			}
+
+			for _, cipher := range tls.InsecureCipherSuites() {
+				if req.TLS.CipherSuite == cipher.ID {
+					output += cipher.Name + "\n"
 				}
 			}
 			output += "TLS Negotiated Proto: " + req.TLS.NegotiatedProtocol + "\n"
@@ -393,13 +374,20 @@ func Request(w http.ResponseWriter, req *http.Request) {
 			response += fmt.Sprint(req.TLS.Version) + "\n"
 		}
 
-		response += "TLS Cipher Suite: "
+		response += fmt.Sprintf("TLS Cipher Suite: %v ", req.TLS.CipherSuite)
 
-		for available, value := range availableCiphers {
-			if req.TLS.CipherSuite == value {
-				response += available + "\n"
+		for _, cipher := range tls.CipherSuites() {
+			if req.TLS.CipherSuite == cipher.ID {
+				response += cipher.Name + "\n"
 			}
 		}
+
+		for _, cipher := range tls.InsecureCipherSuites() {
+			if req.TLS.CipherSuite == cipher.ID {
+				response += cipher.Name + "\n"
+			}
+		}
+
 		response += "TLS Negotiated Proto: " + req.TLS.NegotiatedProtocol + "\n\n"
 	}
 
