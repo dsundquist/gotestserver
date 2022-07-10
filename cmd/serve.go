@@ -22,10 +22,10 @@ import (
 
 var debug bool = false
 
+// Where the server will be runnining, ex localhost:8443
 var location string
 
-// A Mapping or collection of the TLS versions doesn't exist in crypto/tls
-// https://pkg.go.dev/crypto/tls
+// A Mapping TLS Versison, uint -> ASCII  (doesn't exist in crypto/tls)
 var tlsVersionsItoa = map[uint16]string{
 	0x0301: "1.0",
 	0x0302: "1.1",
@@ -33,6 +33,7 @@ var tlsVersionsItoa = map[uint16]string{
 	0x0304: "1.3",
 }
 
+// A Mapping TLS Versison, ASCII -> uint (doesn't exist in crypto/tls)
 var tlsVersionsAtoi = map[string]uint16{
 	"1.0": 0x0301,
 	"1.1": 0x0302,
@@ -90,6 +91,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
+// Start the Webserver with all of the parameters obtained
 func serve(port int, https bool, mtls bool, cert string, key string, clientCert string, tlsMinVersion string, tlsMaxVersion string, ciphers string, http1 bool) {
 	var err error
 
@@ -111,11 +113,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 	location = ":" + strconv.Itoa(port)
 
-	if mtls {
-
-		// Credit to: https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go
-		// Need better erroring here, like you need server.crt, server.key AND client.crt
-		// fmt.Print("Starting mTLS Server, will need ./server.crt, ./server.key, and ./client.crt...\n")
+	if mtls { // mTLS server (doesn't utlize all parameters) https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go
 
 		// Create a CA certificate pool and add cert.pem to it
 		var caCert []byte
@@ -173,6 +171,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 		}
 
 		var tlsCiphers []uint16
+		var tlsCiphersStrings []string
 
 		cipherSlice := strings.Split(ciphers, ",")
 
@@ -180,13 +179,19 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 			for _, availableCipher := range tls.CipherSuites() {
 				if cipher == availableCipher.Name {
 					tlsCiphers = append(tlsCiphers, availableCipher.ID)
+					tlsCiphersStrings = append(tlsCiphersStrings, availableCipher.Name)
 				}
 			}
 			for _, availableCipher := range tls.InsecureCipherSuites() {
 				if cipher == availableCipher.Name {
 					tlsCiphers = append(tlsCiphers, availableCipher.ID)
+					tlsCiphersStrings = append(tlsCiphersStrings, availableCipher.Name)
 				}
 			}
+		}
+
+		if tlsCiphers != nil && tlsMaxVersion == "1.3" {
+			fmt.Println("NOTE: Go ignores specified ciphers for TLS v1.3 connections.")
 		}
 
 		// Making this automatic, having strings was a bad original idea
@@ -219,7 +224,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 			log.Fatalf(errorMessage + "\nSee https://pkg.go.dev/crypto/tls")
 		}
 
-		fmt.Printf("Using ciphers (all available if blank): %v\n", tlsCiphers)
+		fmt.Printf("Using ciphers (all available if blank): %v\n", tlsCiphersStrings)
 
 		tlsConfig := &tls.Config{
 			CipherSuites:             tlsCiphers,
@@ -258,90 +263,9 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	}
 }
 
-func Printlog(req *http.Request) {
-
-	if debug {
-
-		var output string
-		// Top level information
-		output += "Debug Enabled, dropping entire request: \n\n"
-		output += "Remote Addr: " + req.RemoteAddr + "\n"
-		output += "Requested Resource: " + req.RequestURI + "\n"
-		output += "Method: " + req.Method + "\n"
-		output += "Protocol: " + req.Proto + "\n"
-		output += "Content-Length: " + fmt.Sprint(req.ContentLength) + "\n"
-
-		// TLS Information
-		if req.TLS != nil {
-			output += "Local Port: " + location + "\n"
-			output += "TLS SNI: " + req.TLS.ServerName + "\n"
-			output += "TLS Version: "
-			for k, v := range tlsVersionsItoa {
-				if req.TLS.Version == k {
-					output += v + " \n"
-				}
-			}
-
-			output += "TLS Cipher Suite: "
-
-			for _, cipher := range tls.CipherSuites() {
-				if req.TLS.CipherSuite == cipher.ID {
-					output += cipher.Name + "\n"
-				}
-			}
-
-			for _, cipher := range tls.InsecureCipherSuites() {
-				if req.TLS.CipherSuite == cipher.ID {
-					output += cipher.Name + "\n"
-				}
-			}
-			output += "TLS Negotiated Proto: " + req.TLS.NegotiatedProtocol + "\n"
-		}
-
-		// Print the headers, can this look better?
-		output += "Headers: \n"
-		for i, headers := range req.Header {
-			output += "\t [" + i + ";"
-			for j, v := range headers {
-				// output += strconv.Itoa(j)
-				if j == len(headers)-1 {
-					output += v
-				} else {
-					output += v + ","
-				}
-			}
-			output += "]\n"
-		}
-
-		//Output the body
-		output += "Body: \n"
-		bodyBytes, err := ioutil.ReadAll(req.Body)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		output += string(bodyBytes) + "\n"
-
-		// Output the generated log
-		log.Println(output)
-
-	}
-
-	if req.Header.Get("CF-Connecting-IP") != "" {
-		log.Println("Connection from: " + req.Header.Get("CF-Connecting-IP") + " via " + req.RemoteAddr + " to resource: " + req.RequestURI)
-	} else {
-		log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
-	}
-}
-
-func Request(w http.ResponseWriter, req *http.Request) {
-
-	Printlog(req)
+func dumpRequest(req *http.Request) string {
 
 	var response string
-
-	response += "Hello from a very basic Go HTTP(S) server implementation! ;)\n\n"
 	response += fmt.Sprintf("Remote Address: %v\n\n", req.RemoteAddr)
 	response += fmt.Sprintf("Host: %v \n", req.Host)
 
@@ -352,19 +276,13 @@ func Request(w http.ResponseWriter, req *http.Request) {
 
 	// TLS Information
 	if req.TLS != nil {
-		response += "TLS SNI: " + req.TLS.ServerName + "\n"
 		response += "Local Port: " + location + "\n"
+		response += "TLS SNI: " + req.TLS.ServerName + "\n"
 		response += "TLS Version: "
-		if req.TLS.Version == 769 {
-			response += "1.0 \n"
-		} else if req.TLS.Version == 770 {
-			response += "1.1 \n"
-		} else if req.TLS.Version == 771 {
-			response += "1.2 \n"
-		} else if req.TLS.Version == 772 {
-			response += "1.3 \n"
-		} else {
-			response += fmt.Sprint(req.TLS.Version) + "\n"
+		for k, v := range tlsVersionsItoa {
+			if req.TLS.Version == k {
+				response += v + " \n"
+			}
 		}
 
 		response += fmt.Sprint("TLS Cipher Suite: ")
@@ -391,6 +309,41 @@ func Request(w http.ResponseWriter, req *http.Request) {
 			response += fmt.Sprintf("[%v:%v] \n", name, value)
 		}
 	}
+
+	response += "\nBody: \n"
+	bodyBytes, err := ioutil.ReadAll(req.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	response += string(bodyBytes) + "\n"
+
+	return response
+}
+
+func Printlog(req *http.Request) {
+
+	if debug {
+		var output string = "\n" + dumpRequest(req)
+		log.Println(output)
+	}
+
+	if req.Header.Get("CF-Connecting-IP") != "" {
+		log.Println("Connection from: " + req.Header.Get("CF-Connecting-IP") + " via " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	} else {
+		log.Println("Connection from: " + req.RemoteAddr + " to resource: " + req.RequestURI)
+	}
+}
+
+func Request(w http.ResponseWriter, req *http.Request) {
+
+	Printlog(req)
+
+	var response string
+
+	response += "Hello from a very basic Go HTTP(S) server implementation! ;)\n\n"
+	response += dumpRequest(req)
 
 	_, err := os.Stat("./public")
 
