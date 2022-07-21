@@ -266,7 +266,10 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 func dumpRequest(req *http.Request) string {
 
 	var response string
-	response += fmt.Sprintf("Remote Address: %v\n\n", req.RemoteAddr)
+
+	response += fmt.Sprintln(time.Now().UTC())
+
+	response += fmt.Sprintf("\nRemote Address: %v\n\n", req.RemoteAddr)
 	response += fmt.Sprintf("Host: %v \n", req.Host)
 
 	response += "Requested Resource: " + req.RequestURI + "\n"
