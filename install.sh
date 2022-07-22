@@ -10,11 +10,9 @@ cp ./public/index.html ~/go/bin/public
 go install .;
 # Generate SSH Cert
 echo "Generating Server Certificates in ~/go/bin: "
-openssl req  -new  -newkey rsa:2048  -nodes  -keyout ~/go/bin/server.key  -out ~/go/bin/server.csr
-openssl  x509  -req  -days 365  -in ~/go/bin/server.csr  -signkey ~/go/bin/server.key  -out ~/go/bin/server.crt
+openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -out ~/go/bin/server.crt -keyout ~/go/bin/server.key -subj "/C=US/ST=Texas/L=Austin/O=Sundquist/OU=DevOps/CN=localhost"
 # Generate mTLS Cert 
 echo "Generating Client Certificates in ~/go/bin: "
-openssl req  -new  -newkey rsa:2048  -nodes  -keyout ~/go/bin/client.key  -out ~/go/bin/client.csr
-openssl  x509  -req  -days 365  -in ~/go/bin/server.csr  -signkey ~/go/bin/client.key  -out ~/go/bin/client.crt
+openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -out ~/go/bin/client.crt -keyout ~/go/bin/client.key -subj "/C=US/ST=Texas/L=Austin/O=Sundquist/OU=DevOps/CN=localhost"
 
 ### Install as service? 
