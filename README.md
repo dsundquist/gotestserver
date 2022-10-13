@@ -72,7 +72,26 @@ The error occurs at the network level when:
 1. Before a connection is established, the origin web server does not return a SYN+ACK to Cloudflare within 15 seconds of Cloudflare sending a SYN.
 2. After a connection is established, the origin web server doesn’t acknowledge (ACK) Cloudflare’s resource request within 90 seconds.
 
-Therefore we cannot complete this from the same server, as we need to sabatoge the server at the network level.  In my implementation I have another simple http server listening on port 80, in which I'm redirect requests over to.  At that server I've added an iptables drop rule that is dropping all ack packets to the listening port, recreated #2 above. 
+Therefore we cannot complete this from the same server, as we need to sabatoge the server at the network level.  In my implementation I have another simple http server listening on port 80, in which I'm redirect requests over to.  At that server I've added an iptables drop rule that is dropping all ack packets to the addEventListener('fetch', event => {
+    event.respondWith(filterCloudflareHeaders(event.request))
+})
+
+async function filterCloudflareHeaders(req) {
+    let response = await fetch(req)
+    let newHeaders = new Headers()
+    for (var pair of response.headers.entries()) {
+        if (pair[0].toUpperCase() === 'CF-Cache-Status'.toUpperCase()) {
+            continue;
+        } else {
+            newHeaders.set(pair[0], pair[1]);
+        }
+    }
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+    })
+}listening port, recreated #2 above. 
 
 ```
 dsundquist:~$ sudo iptables -S
@@ -93,7 +112,7 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 * Implement QUIC,  https://pkg.go.dev/github.com/lucas-clemente/quic-go/http3 <- seems bit overly complicated 
 
 * Document: 
-  * logging to a file s
+  * logging to a files
   * mTLS
   * http1.1
   * Necessary file structure for all functions to work  
