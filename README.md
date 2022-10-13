@@ -118,5 +118,5 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
   * Necessary file structure for all functions to work  
   * The public folder
   * debugging
-  * Client and its uselessness 
+  * Client and its uselessness  
   
