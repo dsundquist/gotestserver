@@ -101,6 +101,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	http.HandleFunc("/request", Request)
 	http.HandleFunc("/response", Response)
 	http.HandleFunc("/public/", Servefiles)
+	http.HandleFunc("/302", Threeohtwo)
 	http.HandleFunc("/403", Fourohthree)
 	http.HandleFunc("/404", Fourohfour)
 	http.HandleFunc("/405", Fourohfive)
@@ -465,6 +466,13 @@ func Servefiles(w http.ResponseWriter, req *http.Request) {
 	}
 
 	http.ServeFile(w, req, path)
+}
+
+// 302; Redirect
+func Threeohtwo(w http.ResponseWriter, req *http.Request) {
+	Printlog(req)
+	w.Header().Add("Location", req.URL.RawQuery)
+	w.WriteHeader(302)
 }
 
 // 403; Forbidden
