@@ -102,6 +102,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	http.HandleFunc("/longrequest", Longrequest)
 	http.HandleFunc("/response", Response)
 	http.HandleFunc("/public/", Servefiles)
+    http.HandleFunc("/contentlength", ContentLength)
 	http.HandleFunc("/302", Threeohtwo)
 	http.HandleFunc("/403", Fourohthree)
 	http.HandleFunc("/404", Fourohfour)
@@ -265,6 +266,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	}
 }
 
+
 func dumpRequest(req *http.Request) string {
 
 	var response string
@@ -363,6 +365,17 @@ func Request(w http.ResponseWriter, req *http.Request) {
 	} else {
 		fmt.Fprintf(w, "%v\n", response)
 	}
+}
+
+func ContentLength(w http.ResponseWriter, req *http.Request) {
+	Printlog(req)
+
+    var response string
+
+    response += "You've hit the content length endpoint"
+
+    response += dumpRequest(req)
+
 }
 
 func Longrequest(w http.ResponseWriter, req *http.Request) {
