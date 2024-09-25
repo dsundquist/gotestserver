@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 Dean Sundquist dean@sundquist.net
-
 */
 package cmd
 
@@ -97,6 +96,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 	http.HandleFunc("/", Request) // Default prints request headers
 	http.HandleFunc("/cookie", Cookie)
+	http.HandleFunc("/ip", Ip)
 	http.HandleFunc("/readme", Readme)
 	http.HandleFunc("/request", Request)
 	http.HandleFunc("/longrequest", Longrequest)
@@ -349,6 +349,29 @@ func Request(w http.ResponseWriter, req *http.Request) {
 
 	response += "Hello from a very basic Go HTTP(S) server implementation! ;)\n\n"
 	response += dumpRequest(req)
+
+	_, err := os.Stat("./public")
+
+	if err != nil {
+		log.Println("Please create the a folder ./public for serving files.")
+	}
+
+	path := "." + req.URL.Path
+	if path == "./" {
+		path = "./index.html"
+		http.ServeFile(w, req, path)
+	} else {
+		fmt.Fprintf(w, "%v\n", response)
+	}
+}
+
+func Ip(w http.ResponseWriter, req *http.Request) {
+
+	Printlog(req)
+
+	var response string
+
+	response += req.RemoteAddr
 
 	_, err := os.Stat("./public")
 
