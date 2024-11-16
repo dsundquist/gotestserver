@@ -106,6 +106,7 @@ For that sabatoged HTTP server, I also have it programmed to 30 seconds, and two
 
 ## Todo
 
+* BUG: When you run with the -d flag (debug), the body doesn't print on `/request`
 * Add more to the client side, this is still up in the air what will happen here. 
 * Workers for some routes, worker serve the index.html?? 
 * Read from a config.yaml file [SPF13 - Viper](https://github.com/spf13/viper)
