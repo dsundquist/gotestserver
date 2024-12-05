@@ -4,8 +4,11 @@ Copyright © 2022 Dean Sundquist dean@sundquist.net
 package cmd
 
 import (
+	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/spf13/cobra"
 )
 
@@ -102,6 +106,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	http.HandleFunc("/longrequest", Longrequest)
 	http.HandleFunc("/response", Response)
 	http.HandleFunc("/public/", Servefiles)
+	http.HandleFunc("/token_validate", TokenValidate)
 	http.HandleFunc("/302", Threeohtwo)
 	http.HandleFunc("/403", Fourohthree)
 	http.HandleFunc("/404", Fourohfour)
@@ -517,6 +522,97 @@ func Servefiles(w http.ResponseWriter, req *http.Request) {
 	}
 
 	http.ServeFile(w, req, path)
+}
+
+func TokenValidate(w http.ResponseWriter, req *http.Request) {
+	Printlog(req)
+
+	var (
+		ctx        = context.TODO()
+		teamDomain = "https://sundquist.cloudflareaccess.com"
+		certsURL   = fmt.Sprintf("%s/cdn-cgi/access/certs", teamDomain)
+
+		// The Application Audience (AUD) tag for your application
+		policyAUD = "d75b6b22beae665b3bf47507ef87f9cf4d1d1f193e271f624cc176439c58bd56"
+
+		config = &oidc.Config{
+			ClientID: policyAUD,
+		}
+		keySet   = oidc.NewRemoteKeySet(ctx, certsURL)
+		verifier = oidc.NewVerifier(teamDomain, keySet, config)
+	)
+
+	var response string
+
+	headers := req.Header
+
+	// Make sure that the incoming request has our token header
+	//  Could also look in the cookies for CF_AUTHORIZATION
+	accessJWT := headers.Get("Cf-Access-Jwt-Assertion")
+	if accessJWT == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("No token on the request"))
+		return
+	}
+
+	// Verify the access token
+	ctx = req.Context()
+	token, err := verifier.Verify(ctx, accessJWT)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(fmt.Sprintf("Invalid token: %s", err.Error())))
+		return
+	}
+
+	var claims map[string]interface{}
+	if err := token.Claims(&claims); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("Failed to parse token claims: %s", err.Error())))
+		return
+	}
+	response += "Token claims:\n"
+	for key, value := range claims {
+		response += fmt.Sprintf("%s: %v\n", key, value)
+	}
+
+	// Make a new request to the identity endpoint
+	client := &http.Client{}
+	reqIdentity, err := http.NewRequest("GET", "https://access.gotestserver.com/cdn-cgi/access/get-identity", nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("Failed to create request: %s", err.Error())))
+		return
+	}
+	reqIdentity.Header.Set("Cookie", fmt.Sprintf("CF_Authorization=%s", accessJWT))
+
+	response += fmt.Sprintf("\n\n\n\nMaking request: %v", reqIdentity)
+
+	respIdentity, err := client.Do(reqIdentity)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("Failed to get identity: %s", err.Error())))
+		return
+	}
+	defer respIdentity.Body.Close()
+
+	body, err := ioutil.ReadAll(respIdentity.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("Failed to read identity response: %s", err.Error())))
+		return
+	}
+
+	// Copy the identity response to the original response
+	var prettyJSON bytes.Buffer
+	err = json.Indent(&prettyJSON, body, "", "  ")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("Failed to pretty print JSON: %s", err.Error())))
+		return
+	}
+
+	response += "\n\n\n\n\n\n\n\n" + prettyJSON.String()
+	fmt.Fprintf(w, "%v\n", response)
 }
 
 // 302; Redirect
