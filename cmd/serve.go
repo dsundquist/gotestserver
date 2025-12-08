@@ -8,10 +8,12 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -95,6 +97,8 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	var err error
 
 	http.HandleFunc("/", Request) // Default prints request headers
+	http.HandleFunc("/upload", withUploadAuth(Upload))
+	http.HandleFunc("/longerrequest", Longerrequest)
 	http.HandleFunc("/cookie", Cookie)
 	http.HandleFunc("/ip", Ip)
 	http.HandleFunc("/readme", Readme)
@@ -119,7 +123,7 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 
 		// Create a CA certificate pool and add cert.pem to it
 		var caCert []byte
-		caCert, err = ioutil.ReadFile(clientCert)
+		caCert, err = os.ReadFile(clientCert)
 		if errors.Is(err, os.ErrNotExist) {
 			log.Print("Please generate a client certificate:")
 			log.Print("openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -out client.crt -keyout client.key -subj \"/C=US/ST=Texas/L=Austin/O=Sundquist/OU=DevOps/CN=localhost\"")
@@ -290,7 +294,7 @@ func dumpRequest(req *http.Request) string {
 			}
 		}
 
-		response += fmt.Sprint("TLS Cipher Suite: ")
+		response += "TLS Cipher Suite: "
 
 		for _, cipher := range tls.CipherSuites() {
 			if req.TLS.CipherSuite == cipher.ID {
@@ -517,6 +521,173 @@ func Servefiles(w http.ResponseWriter, req *http.Request) {
 	}
 
 	http.ServeFile(w, req, path)
+}
+
+// getMaxSleepDuration returns maximum sleep allowed from env var or default (300s)
+func getMaxSleepDuration() time.Duration {
+	def := int64(300) // 300 seconds default
+	v := os.Getenv("GOTESTSERVER_MAX_SLEEP_SECONDS")
+	if v == "" {
+		return time.Duration(def) * time.Second
+	}
+	parsed, err := strconv.ParseInt(v, 10, 64)
+	if err != nil || parsed < 0 {
+		return time.Duration(def) * time.Second
+	}
+	return time.Duration(parsed) * time.Second
+}
+
+// Longerrequest sleeps for a duration specified in the X-Sleep-Duration header
+// The header accepts Go duration strings (eg "5s", "100ms") or numeric seconds (eg "5" or "5.5").
+func Longerrequest(w http.ResponseWriter, req *http.Request) {
+	Printlog(req)
+
+	header := req.Header.Get("X-Sleep-Duration")
+	if header == "" {
+		http.Error(w, "Missing X-Sleep-Duration header", http.StatusBadRequest)
+		return
+	}
+
+	// Try to parse as a Go duration string first
+	dur, err := time.ParseDuration(header)
+	if err != nil {
+		// try parse as float seconds
+		sec, err2 := strconv.ParseFloat(header, 64)
+		if err2 != nil {
+			http.Error(w, "Invalid duration format; use Go duration (eg 5s) or seconds (eg 5)", http.StatusBadRequest)
+			return
+		}
+		dur = time.Duration(sec * float64(time.Second))
+	}
+
+	if dur < 0 {
+		http.Error(w, "Negative duration not allowed", http.StatusBadRequest)
+		return
+	}
+
+	max := getMaxSleepDuration()
+	if dur > max {
+		http.Error(w, fmt.Sprintf("Requested sleep exceeds max allowed: %v", max), http.StatusBadRequest)
+		return
+	}
+
+	time.Sleep(dur)
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Slept for %v\n", dur)
+}
+
+// getUploadSecret returns the upload secret from environment or a default.
+func getUploadSecret() string {
+	s := os.Getenv("GOTESTSERVER_UPLOAD_SECRET")
+	if s == "" {
+		s = "changeme"
+	}
+	return s
+}
+
+// getMaxUploadSize returns the maximum allowed upload size in bytes from env or default (1GB).
+func getMaxUploadSize() int64 {
+	def := int64(1 << 30) // 1GB
+	v := os.Getenv("GOTESTSERVER_MAX_UPLOAD_BYTES")
+	if v == "" {
+		return def
+	}
+	parsed, err := strconv.ParseInt(v, 10, 64)
+	if err != nil || parsed <= 0 {
+		return def
+	}
+	return parsed
+}
+
+// withUploadAuth is middleware that checks for the X-Upload-Secret header.
+func withUploadAuth(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		secret := getUploadSecret()
+		header := req.Header.Get("X-Upload-Secret")
+		if header == "" {
+			http.Error(w, "Missing upload secret header", http.StatusUnauthorized)
+			return
+		}
+		if header != secret {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		h(w, req)
+	}
+}
+
+// Upload handles multipart file uploads and streams files to ./uploads
+func Upload(w http.ResponseWriter, req *http.Request) {
+	Printlog(req)
+
+	if req.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	maxSize := getMaxUploadSize()
+	req.Body = http.MaxBytesReader(w, req.Body, maxSize)
+
+	mr, err := req.MultipartReader()
+	if err != nil {
+		http.Error(w, "Invalid multipart request", http.StatusBadRequest)
+		return
+	}
+
+	var saved []string
+
+	for {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, "Error reading multipart data", http.StatusInternalServerError)
+			return
+		}
+
+		if part.FileName() == "" {
+			// skip non-file fields
+			continue
+		}
+
+		fname := filepath.Base(part.FileName())
+		if fname == "" {
+			continue
+		}
+
+		err = os.MkdirAll("./uploads", 0755)
+		if err != nil {
+			http.Error(w, "Unable to create uploads directory", http.StatusInternalServerError)
+			return
+		}
+
+		outPath := filepath.Join("uploads", fname)
+		out, err := os.Create(outPath)
+		if err != nil {
+			http.Error(w, "Unable to create file", http.StatusInternalServerError)
+			return
+		}
+
+		_, err = io.Copy(out, part)
+		out.Close()
+		part.Close()
+		if err != nil {
+			http.Error(w, "Error saving file", http.StatusInternalServerError)
+			return
+		}
+
+		saved = append(saved, outPath)
+	}
+
+	if len(saved) == 0 {
+		http.Error(w, "No files uploaded", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, "Saved: %v\n", strings.Join(saved, ","))
 }
 
 // 302; Redirect
