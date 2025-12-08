@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"bytes"
 	"log"
 	"net/http"
 	"os"
@@ -325,6 +326,9 @@ func dumpRequest(req *http.Request) string {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Restore the Body so downstream handlers can still read it (important for multipart)
+	req.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
 
 	response += string(bodyBytes) + "\n"
 
