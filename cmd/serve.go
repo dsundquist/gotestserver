@@ -4,13 +4,13 @@ Copyright © 2022 Dean Sundquist dean@sundquist.net
 package cmd
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"bytes"
 	"log"
 	"net/http"
 	"os"
@@ -49,6 +49,7 @@ var serveCmd = &cobra.Command{
 	Short: "Serve the gotesterver",
 	Long:  `Use this command to start the webserver, at this time it will use port 80`,
 	Run: func(cmd *cobra.Command, args []string) {
+		listeningIP, _ := cmd.Flags().GetString("listening_ip")
 		port, _ := cmd.Flags().GetInt("port")
 		https, _ := cmd.Flags().GetBool("secure")
 		mtls, _ := cmd.Flags().GetBool("mtls")
@@ -67,9 +68,9 @@ var serveCmd = &cobra.Command{
 				fmt.Print("Found default port of 80 setting it to 443 for HTTPS Server\n")
 				port = 443
 			}
-			fmt.Printf("Starting HTTPS Server on port: %v\n", port)
+			fmt.Printf("Starting HTTPS Server on: %v\n", listeningIP+":"+strconv.Itoa(port))
 		} else {
-			fmt.Printf("Starting HTTP Server on port: %v\n", port)
+			fmt.Printf("Starting HTTP Server on: %v\n", listeningIP+":"+strconv.Itoa(port))
 		}
 		// fmt.Printf("Port: %v, https: %v, mtls: %v, cert: %v, key: %v, clientCert: %v\n", port, https, mtls, cert, key, clientCert)
 		// Are we logging to a file?
@@ -85,7 +86,7 @@ var serveCmd = &cobra.Command{
 			log.SetOutput(logfile)
 		}
 
-		serve(port, https, mtls, cert, key, clientCert, tlsMinVersion, tlsMaxVersion, ciphers, http1)
+		serve(listeningIP, port, https, mtls, cert, key, clientCert, tlsMinVersion, tlsMaxVersion, ciphers, http1)
 	},
 }
 
@@ -94,7 +95,7 @@ func init() {
 }
 
 // Start the Webserver with all of the parameters obtained
-func serve(port int, https bool, mtls bool, cert string, key string, clientCert string, tlsMinVersion string, tlsMaxVersion string, ciphers string, http1 bool) {
+func serve(listeningIP string, port int, https bool, mtls bool, cert string, key string, clientCert string, tlsMinVersion string, tlsMaxVersion string, ciphers string, http1 bool) {
 	var err error
 
 	http.HandleFunc("/", Request) // Default prints request headers
@@ -118,7 +119,14 @@ func serve(port int, https bool, mtls bool, cert string, key string, clientCert 
 	http.HandleFunc("/520", Fivetwenty)
 	http.HandleFunc("/524", Fivetwentyfour)
 
-	location = ":" + strconv.Itoa(port)
+	// Handle IPv6 and empty IPs correctly
+	if strings.Contains(listeningIP, ":") && !strings.HasPrefix(listeningIP, "[") {
+		location = "[" + listeningIP + "]:" + strconv.Itoa(port)
+	} else if listeningIP == "" {
+		location = ":" + strconv.Itoa(port)
+	} else {
+		location = listeningIP + ":" + strconv.Itoa(port)
+	}
 
 	if mtls { // mTLS server (doesn't utlize all parameters) https://venilnoronha.io/a-step-by-step-guide-to-mtls-in-go
 

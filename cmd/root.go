@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 Dean Sundquist dean@sundquist.net
-
 */
 package cmd
 
@@ -48,6 +47,7 @@ func init() {
 	serveCmd.Flags().BoolP("debug", "d", false, "Set the logging level to debug")
 	serveCmd.Flags().String("key", "./server.key", "Specify the server key for HTTPS")
 	serveCmd.Flags().BoolP("mtls", "m", false, "Run a mTLS server. Requires: ./server.crt, ./server.key, and ./client.crt")
+	serveCmd.Flags().String("listening_ip", "127.0.0.1", "Specify the IP address for the webserver to listen on")
 	serveCmd.Flags().IntP("port", "p", 80, "Specify which port for the webserver to run on")
 	serveCmd.Flags().BoolP("secure", "s", false, "Run a HTTPS server. Requires: ./server.crt and ./server.key")
 	serveCmd.Flags().String("tlsMin", "1.0", "Choose the Minimum TLS Version, available options: 1.0, 1.1, 1.2, 1.3")
