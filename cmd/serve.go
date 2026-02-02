@@ -118,6 +118,7 @@ func serve(listeningIP string, port int, https bool, mtls bool, cert string, key
 	http.HandleFunc("/504", Fiveohfour)
 	http.HandleFunc("/520", Fivetwenty)
 	http.HandleFunc("/524", Fivetwentyfour)
+	http.HandleFunc("/uploadtest", UploadTest)
 
 	// Handle IPv6 and empty IPs correctly
 	if strings.Contains(listeningIP, ":") && !strings.HasPrefix(listeningIP, "[") {
@@ -700,6 +701,185 @@ func Upload(w http.ResponseWriter, req *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "Saved: %v\n", strings.Join(saved, ","))
+}
+
+// UploadTest handles file uploads, discards the content, and returns an HTML page with file details
+func UploadTest(w http.ResponseWriter, req *http.Request) {
+	Printlog(req)
+
+	// If GET request, show the upload form
+	if req.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload Test</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; margin-bottom: 30px; }
+        .upload-form { border: 2px dashed #ccc; padding: 40px; text-align: center; border-radius: 8px; transition: border-color 0.3s; }
+        .upload-form:hover { border-color: #007bff; }
+        input[type="file"] { margin: 20px 0; }
+        button { background: #007bff; color: white; border: none; padding: 12px 30px; font-size: 16px; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .note { color: #666; font-size: 14px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📁 File Upload Test</h1>
+        <form class="upload-form" action="/uploadtest" method="POST" enctype="multipart/form-data">
+            <p>Select a file to upload (it will be discarded after processing)</p>
+            <input type="file" name="file" multiple>
+            <br><br>
+            <button type="submit">Upload File(s)</button>
+        </form>
+        <p class="note">Note: Files are not saved to disk. This endpoint only reports file metadata.</p>
+    </div>
+</body>
+</html>`)
+		return
+	}
+
+	if req.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	maxSize := getMaxUploadSize()
+	req.Body = http.MaxBytesReader(w, req.Body, maxSize)
+
+	mr, err := req.MultipartReader()
+	if err != nil {
+		http.Error(w, "Invalid multipart request", http.StatusBadRequest)
+		return
+	}
+
+	type fileInfo struct {
+		Filename    string
+		Size        int64
+		ContentType string
+	}
+	var files []fileInfo
+	var totalSize int64
+
+	for {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, "Error reading multipart data", http.StatusInternalServerError)
+			return
+		}
+
+		if part.FileName() == "" {
+			part.Close()
+			continue
+		}
+
+		fname := filepath.Base(part.FileName())
+		contentType := part.Header.Get("Content-Type")
+		if contentType == "" {
+			contentType = "application/octet-stream"
+		}
+
+		// Read and discard the file content, counting bytes
+		n, err := io.Copy(io.Discard, part)
+		part.Close()
+		if err != nil {
+			http.Error(w, "Error reading file data", http.StatusInternalServerError)
+			return
+		}
+
+		files = append(files, fileInfo{
+			Filename:    fname,
+			Size:        n,
+			ContentType: contentType,
+		})
+		totalSize += n
+	}
+
+	if len(files) == 0 {
+		http.Error(w, "No files uploaded", http.StatusBadRequest)
+		return
+	}
+
+	// Generate HTML response
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	fmt.Fprint(w, `<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Complete</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #28a745; margin-bottom: 30px; }
+        .summary { background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+        .summary h2 { margin: 0 0 10px 0; color: #2e7d32; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; font-weight: 600; }
+        .size { font-family: monospace; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Upload Complete!</h1>
+        <div class="summary">
+            <h2>Summary</h2>
+            <p><strong>Files Processed:</strong> `)
+	fmt.Fprintf(w, "%d", len(files))
+	fmt.Fprint(w, `</p>
+            <p><strong>Total Size:</strong> <span class="size">`)
+	fmt.Fprintf(w, "%s", formatBytes(totalSize))
+	fmt.Fprint(w, `</span></p>
+            <p><strong>Status:</strong> All files discarded (not saved to disk)</p>
+        </div>
+        <h2>File Details</h2>
+        <table>
+            <tr>
+                <th>#</th>
+                <th>Filename</th>
+                <th>Size</th>
+                <th>Content-Type</th>
+            </tr>`)
+
+	for i, f := range files {
+		fmt.Fprintf(w, `
+            <tr>
+                <td>%d</td>
+                <td>%s</td>
+                <td class="size">%s</td>
+                <td>%s</td>
+            </tr>`, i+1, f.Filename, formatBytes(f.Size), f.ContentType)
+	}
+
+	fmt.Fprint(w, `
+        </table>
+        <p style="margin-top: 30px;"><a href="/uploadtest">← Upload another file</a></p>
+    </div>
+</body>
+</html>`)
+}
+
+// formatBytes converts bytes to a human-readable string
+func formatBytes(b int64) string {
+	const unit = 1024
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.2f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
 // 302; Redirect
